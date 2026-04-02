@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/pilates.iml" filepath="$PROJECT_DIR$/.idea/pilates.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pilates/pilates.iml" filepath="$PROJECT_DIR$/pilates/pilates.iml" />
     </modules>
   </component>
 </project>
