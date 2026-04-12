@@ -68,4 +68,19 @@ public class UsuarioController {
         UsuarioSessaoDto sessao = UsuarioMapper.toSessao(autenticado);
         return ResponseEntity.ok(sessao);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from(COOKIE_NOME, "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)  // maxAge=0 instrui o browser a deletar o cookie imediatamente
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ResponseEntity.noContent().build();
+    }
 }
