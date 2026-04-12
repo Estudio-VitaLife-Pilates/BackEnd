@@ -82,8 +82,7 @@ public class SecurityConfiguracao {
             "/usuarios/logout/**",
             "/h2-console/**",
             "/h2-console/*/**",
-            "/error/**",
-            "/usuarios"
+            "/error/**"
     };
 
     /**
@@ -116,6 +115,9 @@ public class SecurityConfiguracao {
 
                 // Define quais URLs são públicas e quais exigem autenticação
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/logout").permitAll()
                         .requestMatchers(URLS_PERMITIDAS).permitAll()  // rotas públicas
                         .anyRequest().authenticated()                  // todas as outras exigem token
                 )

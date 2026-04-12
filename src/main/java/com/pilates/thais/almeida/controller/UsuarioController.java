@@ -1,9 +1,6 @@
 package com.pilates.thais.almeida.controller;
 
-import com.pilates.thais.almeida.dto.usuario.UsuarioCriacaoDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioLoginDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioSessaoDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioTokenDto;
+import com.pilates.thais.almeida.dto.usuario.*;
 import com.pilates.thais.almeida.entity.Usuario;
 import com.pilates.thais.almeida.mapper.UsuarioMapper;
 import com.pilates.thais.almeida.service.UsuarioService;
@@ -15,12 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -82,5 +77,16 @@ public class UsuarioController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    @SecurityRequirement(name = "Bearer")
+    public ResponseEntity<List<UsuarioListarDto>> listarTodos() {
+        List<UsuarioListarDto> usuariosEncontrados = this.usuarioService.listarTodos();
+
+        if (usuariosEncontrados.isEmpty()) {
+            return ResponseEntity.status(204).build();
+        }
+        return ResponseEntity.ok(usuariosEncontrados);
     }
 }

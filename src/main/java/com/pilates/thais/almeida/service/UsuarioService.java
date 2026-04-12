@@ -1,6 +1,7 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.config.GerenciadorTokenJwt;
+import com.pilates.thais.almeida.dto.usuario.UsuarioListarDto;
 import com.pilates.thais.almeida.dto.usuario.UsuarioTokenDto;
 import com.pilates.thais.almeida.entity.Usuario;
 import com.pilates.thais.almeida.mapper.UsuarioMapper;
@@ -12,6 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 public class UsuarioService {
@@ -51,5 +54,12 @@ public class UsuarioService {
         String token = gerenciadorTokenJwt.generateToken(authentication);
 
         return UsuarioMapper.toTokenDto(usuarioAutenticado, token);
+    }
+
+    public List<UsuarioListarDto> listarTodos() {
+
+        List<Usuario> usuariosEncontrados = usuarioRepository.findAll();
+        return usuariosEncontrados.stream().map(UsuarioMapper::toListarDto).toList();
+
     }
 }

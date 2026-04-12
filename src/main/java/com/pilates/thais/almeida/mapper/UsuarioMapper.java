@@ -1,9 +1,6 @@
 package com.pilates.thais.almeida.mapper;
 
-import com.pilates.thais.almeida.dto.usuario.UsuarioCriacaoDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioLoginDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioSessaoDto;
-import com.pilates.thais.almeida.dto.usuario.UsuarioTokenDto;
+import com.pilates.thais.almeida.dto.usuario.*;
 import com.pilates.thais.almeida.entity.Usuario;
 
 public class UsuarioMapper {
@@ -45,5 +42,15 @@ public class UsuarioMapper {
         dto.setNome(tokenDto.getNome());
 
         return dto;
+    }
+
+    public static UsuarioListarDto toListarDto(Usuario usuario){
+        UsuarioListarDto usuarioListarDto = new UsuarioListarDto();
+
+        usuarioListarDto.setId(usuario.getId());
+        usuarioListarDto.setEmail(usuario.getEmail());
+        usuarioListarDto.setNome(usuario.getNome());
+
+        return usuarioListarDto;
     }
 }
