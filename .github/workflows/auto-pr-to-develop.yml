@@ -1,0 +1,28 @@
+name: Criação automatica de PRs
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'feature/**'
+      - 'feat/*'
+      - 'feat/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Criar PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: develop
+          branch: ${{ github.ref_name }}
+          title: "[FEATURE]: ${{ github.ref_name }}"
+          body: |
+            PR criada automaticamente da branch `${{ github.ref_name }}` para `develop`.
