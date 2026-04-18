@@ -19,11 +19,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Criar PR se não existir
+      - name: Criar PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr view "${{ github.ref_name }}" >/dev/null 2>&1 || \
           gh pr create \
             --base develop \
             --head "${{ github.ref_name }}" \
