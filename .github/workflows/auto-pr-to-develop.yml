@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
       - name: Criar PR
         uses: peter-evans/create-pull-request@v6
         with:
