@@ -3,7 +3,9 @@ name: Criação automatica de PRs
 on:
   push:
     branches:
+      - 'feature/*'
       - 'feature/**'
+      - 'feat/*'
       - 'feat/**'
 
 permissions:
