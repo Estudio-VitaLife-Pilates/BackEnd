@@ -37,4 +37,12 @@ public class PlanoController {
     ){
         return ResponseEntity.status(201).body(PlanoMapper.toResponse(planoService.criar(PlanoMapper.toEntity(plano))));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(
+            @PathVariable Integer id
+    ){
+        planoService.deletarPorId(id);
+        return ResponseEntity.status(204).build();
+    }
 }

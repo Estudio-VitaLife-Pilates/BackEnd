@@ -35,5 +35,11 @@ public class PlanoService {
         return planoRepository.save(plano);
     }
 
-
+    public void deletarPorId(Integer id){
+        if(planoRepository.existsById(id)){
+            planoRepository.deleteById(id);
+        }else{
+            throw new RecursoNaoEncontrado("");
+        }
+    }
 }
