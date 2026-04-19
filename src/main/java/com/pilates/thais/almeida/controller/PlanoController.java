@@ -24,6 +24,13 @@ public class PlanoController {
         return ResponseEntity.status(200).body(PlanoMapper.toResponse(planoService.buscarTodos()));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<PlanoResponseDto> obterPorId(
+            @PathVariable Integer id
+    ){
+        return ResponseEntity.status(200).body(PlanoMapper.toResponse(planoService.buscarPorId(id)));
+    }
+
     @PostMapping
     public ResponseEntity<PlanoResponseDto> criar(
             @Valid @RequestBody PlanoRequestDto plano
