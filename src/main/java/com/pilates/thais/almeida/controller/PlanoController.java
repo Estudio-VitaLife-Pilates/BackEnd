@@ -38,6 +38,14 @@ public class PlanoController {
         return ResponseEntity.status(201).body(PlanoMapper.toResponse(planoService.criar(PlanoMapper.toEntity(plano))));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PlanoResponseDto> editarPorId(
+            @PathVariable Integer id,
+            @Valid @RequestBody PlanoRequestDto dto
+    ){
+        return ResponseEntity.status(200).body(PlanoMapper.toResponse(planoService.editarPorId(PlanoMapper.toEntity(dto), id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(
             @PathVariable Integer id
