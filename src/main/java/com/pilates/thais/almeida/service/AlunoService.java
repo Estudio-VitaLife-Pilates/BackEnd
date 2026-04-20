@@ -26,6 +26,10 @@ public class AlunoService {
                 .orElseThrow(() -> new AlunoNaoEncontrado(""));
     }
 
+    public List<Aluno> buscarPorNome(String nome){
+        return alunoRepository.findAllByNomeContainingIgnoreCase(nome);
+    }
+
     public Aluno criar(Aluno aluno){
         return alunoRepository.save(aluno);
     }

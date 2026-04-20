@@ -32,6 +32,13 @@ public class AlunoController {
         return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.obterPorId(id)));
     }
 
+    @GetMapping("/buscar/nome")
+    public ResponseEntity<List<AlunoResponseDto>> buscarPorNome(
+            @RequestParam String nome
+    ){
+        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.buscarPorNome(nome)));
+    }
+
     @PostMapping
     public ResponseEntity<AlunoResponseDto> criar(
             @Valid @RequestBody AlunoRequestDto request
