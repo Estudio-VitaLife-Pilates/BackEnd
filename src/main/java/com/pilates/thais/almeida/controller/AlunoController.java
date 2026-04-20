@@ -38,4 +38,12 @@ public class AlunoController {
     ){
         return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarAluno(
+            @PathVariable Integer id
+    ){
+        alunoService.deletarPorId(id);
+        return ResponseEntity.status(204).build();
+    }
 }

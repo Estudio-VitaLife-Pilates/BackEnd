@@ -29,4 +29,8 @@ public class AlunoService {
     public Aluno criar(Aluno aluno){
         return alunoRepository.save(aluno);
     }
+
+    public void deletarPorId(Integer id){
+        alunoRepository.deleteById(id);
+    }
 }
