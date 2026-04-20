@@ -30,6 +30,17 @@ public class AlunoService {
         return alunoRepository.save(aluno);
     }
 
+    public Aluno editar(Aluno aluno, Integer id){
+        Optional<Aluno> alunoBD = alunoRepository.findById(id);
+
+        if(alunoBD.isPresent()){
+            aluno.setId(alunoBD.get().getId());
+
+            return alunoRepository.save(aluno);
+        }
+        throw new AlunoNaoEncontrado("");
+    }
+
     public void deletarPorId(Integer id){
         alunoRepository.deleteById(id);
     }

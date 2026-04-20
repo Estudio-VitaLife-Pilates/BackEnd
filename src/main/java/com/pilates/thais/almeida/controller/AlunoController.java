@@ -39,6 +39,14 @@ public class AlunoController {
         return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<AlunoResponseDto> editar(
+            @Valid @RequestBody AlunoRequestDto request,
+            @PathVariable Integer id
+    ){
+        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.editar(AlunoMapper.toEntity(request), id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarAluno(
             @PathVariable Integer id
