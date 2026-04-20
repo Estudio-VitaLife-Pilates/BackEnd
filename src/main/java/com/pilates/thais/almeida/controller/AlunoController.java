@@ -1,13 +1,12 @@
 package com.pilates.thais.almeida.controller;
 
+import com.pilates.thais.almeida.dto.aluno.AlunoRequestDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoResponseDto;
 import com.pilates.thais.almeida.mapper.AlunoMapper;
 import com.pilates.thais.almeida.service.AlunoService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -31,5 +30,12 @@ public class AlunoController {
             @PathVariable Integer id
     ){
         return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.obterPorId(id)));
+    }
+
+    @PostMapping
+    public ResponseEntity<AlunoResponseDto> criar(
+            @Valid @RequestBody AlunoRequestDto request
+    ){
+        return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
     }
 }

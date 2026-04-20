@@ -60,7 +60,7 @@ public class Aluno {
         this.email = email;
     }
 
-    public boolean isAtivo() {
+    public boolean getAtivo() {
         return ativo;
     }
 

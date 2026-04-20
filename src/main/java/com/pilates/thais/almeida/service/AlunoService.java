@@ -25,4 +25,8 @@ public class AlunoService {
         return alunoRepository.findById(id)
                 .orElseThrow(() -> new AlunoNaoEncontrado(""));
     }
+
+    public Aluno criar(Aluno aluno){
+        return alunoRepository.save(aluno);
+    }
 }
