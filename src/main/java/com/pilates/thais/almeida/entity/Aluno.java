@@ -19,6 +19,7 @@ public class Aluno {
     private boolean ativo;
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
+    private String fichaAnamnese;
 
     public Integer getId() {
         return id;
@@ -82,5 +83,13 @@ public class Aluno {
 
     public void setDataCadastro(LocalDate dataCadastro) {
         this.dataCadastro = dataCadastro;
+    }
+
+    public String getFichaAnamnese() {
+        return fichaAnamnese;
+    }
+
+    public void setFichaAnamnese(String fichaAnamnese) {
+        this.fichaAnamnese = fichaAnamnese;
     }
 }

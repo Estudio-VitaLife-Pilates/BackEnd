@@ -20,6 +20,7 @@ public class AlunoMapper {
         dto.setId(entity.getId());
         dto.setDataNascimento(entity.getDataNascimento());
         dto.setTelefone(entity.getTelefone());
+        dto.setFichaAnamnese(entity.getFichaAnamnese());
 
         return dto;
     }
@@ -40,6 +41,7 @@ public class AlunoMapper {
         aluno.setTelefone(dto.getTelefone());
         aluno.setDataCadastro(LocalDate.now());
         aluno.setDataNascimento(dto.getDataNascimento());
+        aluno.setFichaAnamnese(dto.getFichaAnamnese());
 
         return aluno;
     }

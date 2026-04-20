@@ -13,23 +13,18 @@ public class AlunoRequestDto {
     @NotBlank
     private String nome;
 
-    @NotNull
-    @NotBlank
     private String telefone;
 
-    @NotNull
-    @NotBlank
     @CPF
     private String cpf;
 
-    @NotNull
-    @NotBlank
     @Email
     private String email;
 
-    @NotNull
     @Past
     private LocalDate dataNascimento;
+
+    private String fichaAnamnese;
 
     public String getNome() {
         return nome;
@@ -69,5 +64,13 @@ public class AlunoRequestDto {
 
     public void setDataNascimento(LocalDate dataNascimento) {
         this.dataNascimento = dataNascimento;
+    }
+
+    public String getFichaAnamnese() {
+        return fichaAnamnese;
+    }
+
+    public void setFichaAnamnese(String fichaAnamnese) {
+        this.fichaAnamnese = fichaAnamnese;
     }
 }
