@@ -3,6 +3,8 @@ package com.pilates.thais.almeida.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Aluno {
@@ -16,10 +18,13 @@ public class Aluno {
     private String telefone;
     private String cpf;
     private String email;
-    private boolean ativo;
+    private Boolean ativo;
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
     private String fichaAnamnese;
+
+    @OneToMany(mappedBy = "aluno")
+    private List<AlunoPlano> alunoPlanos = new ArrayList<>();
 
     public Integer getId() {
         return id;
@@ -61,11 +66,11 @@ public class Aluno {
         this.email = email;
     }
 
-    public boolean getAtivo() {
+    public Boolean getAtivo() {
         return ativo;
     }
 
-    public void setAtivo(boolean ativo) {
+    public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
     }
 
@@ -91,5 +96,13 @@ public class Aluno {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public List<AlunoPlano> getAlunoPlanos() {
+        return alunoPlanos;
+    }
+
+    public void setAlunoPlanos(List<AlunoPlano> alunoPlanos) {
+        this.alunoPlanos = alunoPlanos;
     }
 }

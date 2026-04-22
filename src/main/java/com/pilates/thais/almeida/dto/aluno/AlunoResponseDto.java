@@ -4,6 +4,7 @@ package com.pilates.thais.almeida.dto.aluno;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @JsonPropertyOrder({
         "id","nome","telefone","cpf","email","fichaAnamnese","ativo","dataNascimento","dataCadastro"
@@ -14,7 +15,7 @@ public class AlunoResponseDto {
     private String telefone;
     private String cpf;
     private String email;
-    private boolean ativo;
+    private Boolean ativo;
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
     private String fichaAnamnese;
@@ -59,11 +60,11 @@ public class AlunoResponseDto {
         this.email = email;
     }
 
-    public boolean getAtivo() {
+    public Boolean getAtivo() {
         return ativo;
     }
 
-    public void setAtivo(boolean ativo) {
+    public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
     }
 

@@ -1,9 +1,9 @@
 package com.pilates.thais.almeida.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Plano {
@@ -16,6 +16,9 @@ public class Plano {
     private Integer frequenciaSemanal;
     private Integer validadeDias;
     private Double valorMensal;
+
+    @OneToMany(mappedBy = "plano")
+    private List<AlunoPlano> alunoPlanos = new ArrayList<>();
 
     public Integer getId() {
         return id;
@@ -55,5 +58,13 @@ public class Plano {
 
     public void setValorMensal(Double valorMensal) {
         this.valorMensal = valorMensal;
+    }
+
+    public List<AlunoPlano> getAlunoPlanos() {
+        return alunoPlanos;
+    }
+
+    public void setAlunoPlanos(List<AlunoPlano> alunoPlanos) {
+        this.alunoPlanos = alunoPlanos;
     }
 }
