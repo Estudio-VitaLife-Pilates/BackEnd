@@ -1,5 +1,6 @@
 package com.pilates.thais.almeida.controller;
 
+import com.pilates.thais.almeida.dto.plano.PlanoDetailsResponseDto;
 import com.pilates.thais.almeida.dto.plano.PlanoRequestDto;
 import com.pilates.thais.almeida.dto.plano.PlanoResponseDto;
 import com.pilates.thais.almeida.mapper.PlanoMapper;
@@ -24,11 +25,23 @@ public class PlanoController {
         return ResponseEntity.status(200).body(PlanoMapper.toResponse(planoService.buscarTodos()));
     }
 
+    @GetMapping("/details")
+    public ResponseEntity<List<PlanoDetailsResponseDto>> obterTodosComAlunos(){
+        return ResponseEntity.status(200).body(PlanoMapper.toResponseDetails(planoService.buscarTodos()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<PlanoResponseDto> obterPorId(
             @PathVariable Integer id
     ){
         return ResponseEntity.status(200).body(PlanoMapper.toResponse(planoService.buscarPorId(id)));
+    }
+
+    @GetMapping("/{id}/details")
+    public ResponseEntity<PlanoDetailsResponseDto> obterPorIdComAlunos(
+            @PathVariable Integer id
+    ){
+        return ResponseEntity.status(200).body(PlanoMapper.toResponseDetails(planoService.buscarPorId(id)));
     }
 
     @PostMapping
