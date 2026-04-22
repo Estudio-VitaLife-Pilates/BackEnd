@@ -54,6 +54,26 @@ public class AlunoController {
         return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.associarPlano(idAluno, idPlano)));
     }
 
+    @DeleteMapping("/planos/{idAluno}/{idPlano}/{idAlunoPlano}/desativar")
+    public ResponseEntity<Void> desativarPlano(
+            @PathVariable Integer idAluno,
+            @PathVariable Integer idPlano,
+            @PathVariable Integer idAlunoPlano
+    ){
+        alunoService.desativarPlano(idAluno, idPlano, idAlunoPlano);
+        return ResponseEntity.status(204).build();
+    }
+
+    @PutMapping("/planos/{idAluno}/{idPlano}/{idAlunoPlano}/reativar")
+    public ResponseEntity<Void> reativarPlano(
+            @PathVariable Integer idAluno,
+            @PathVariable Integer idPlano,
+            @PathVariable Integer idAlunoPlano
+    ){
+        alunoService.reativarPlano(idAluno, idPlano, idAlunoPlano);
+        return ResponseEntity.status(204).build();
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<AlunoResponseDto> editar(
             @Valid @RequestBody AlunoRequestDto request,

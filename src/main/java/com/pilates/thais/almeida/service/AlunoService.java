@@ -4,6 +4,7 @@ import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.Plano;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
+import com.pilates.thais.almeida.exceptions.AlunoPlanoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
 import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
@@ -63,6 +64,24 @@ public class AlunoService {
 
         return alunoRepository.findById(idAluno)
                 .orElseThrow(() -> new AlunoNaoEncontrado(""));
+    }
+
+    public void desativarPlano(Integer idAluno, Integer idPlano, Integer idAlunoPlano){
+        AlunoPlano alunoPlano = alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(idAlunoPlano, idAluno, idPlano)
+                .orElseThrow(() -> new AlunoPlanoNaoEncontrado(""));
+
+        alunoPlano.setAtivo(false);
+
+        alunoPlanoRepository.save(alunoPlano);
+    }
+
+    public void reativarPlano(Integer idAluno, Integer idPlano, Integer idAlunoPlano){
+        AlunoPlano alunoPlano = alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(idAlunoPlano, idAluno, idPlano)
+                .orElseThrow(() -> new AlunoPlanoNaoEncontrado(""));
+
+        alunoPlano.setAtivo(true);
+
+        alunoPlanoRepository.save(alunoPlano);
     }
 
     public Aluno editar(Aluno aluno, Integer id){
