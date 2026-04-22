@@ -59,7 +59,8 @@ public class AlunoMapper {
         AlunoResponseDto.AlunoPlanoResponseDto dto =
                 new AlunoResponseDto.AlunoPlanoResponseDto();
 
-        dto.setId(entity.getPlano().getId());
+        dto.setIdPlano(entity.getPlano().getId());
+        dto.setIdAlunoPlano(entity.getId());
         dto.setNome(entity.getPlano().getNome());
         dto.setFrequenciaSemanal(entity.getPlano().getFrequenciaSemanal());
         dto.setValidadeDias(entity.getPlano().getValidadeDias());

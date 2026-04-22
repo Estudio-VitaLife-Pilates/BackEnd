@@ -103,12 +103,13 @@ public class AlunoResponseDto {
     }
 
     public static class AlunoPlanoResponseDto{
-        private Integer id;
+        private Integer idPlano;
         private String nome;
         private Integer frequenciaSemanal;
         private Integer validadeDias;
         private Double valorMensal;
 
+        private Integer idAlunoPlano;
         private LocalDate dataInicio;
         private LocalDate dataFim;
         private Boolean ativo;
@@ -145,12 +146,20 @@ public class AlunoResponseDto {
             this.valorMensal = valorMensal;
         }
 
-        public Integer getId() {
-            return id;
+        public Integer getIdPlano() {
+            return idPlano;
         }
 
-        public void setId(Integer id) {
-            this.id = id;
+        public void setIdPlano(Integer idPlano) {
+            this.idPlano = idPlano;
+        }
+
+        public Integer getIdAlunoPlano() {
+            return idAlunoPlano;
+        }
+
+        public void setIdAlunoPlano(Integer idAlunoPlano) {
+            this.idAlunoPlano = idAlunoPlano;
         }
 
         public LocalDate getDataInicio() {
