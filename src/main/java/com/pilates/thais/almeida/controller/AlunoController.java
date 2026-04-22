@@ -46,6 +46,14 @@ public class AlunoController {
         return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
     }
 
+    @PostMapping("/planos/{idAluno}/{idPlano}")
+    public ResponseEntity<AlunoResponseDto> associarPlano(
+            @PathVariable Integer idAluno,
+            @PathVariable Integer idPlano
+    ){
+        return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.associarPlano(idAluno, idPlano)));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<AlunoResponseDto> editar(
             @Valid @RequestBody AlunoRequestDto request,

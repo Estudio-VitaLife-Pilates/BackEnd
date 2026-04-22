@@ -1,10 +1,16 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.Aluno;
+import com.pilates.thais.almeida.entity.AlunoPlano;
+import com.pilates.thais.almeida.entity.Plano;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
+import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
+import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
+import com.pilates.thais.almeida.repository.PlanoRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,9 +18,13 @@ import java.util.Optional;
 public class AlunoService {
 
     private final AlunoRepository alunoRepository;
+    private final PlanoRepository planoRepository;
+    private final AlunoPlanoRepository alunoPlanoRepository;
 
-    public AlunoService(AlunoRepository alunoRepository) {
+    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository, AlunoPlanoRepository alunoPlanoRepository) {
         this.alunoRepository = alunoRepository;
+        this.planoRepository = planoRepository;
+        this.alunoPlanoRepository = alunoPlanoRepository;
     }
 
     public List<Aluno> obterTodos(){
@@ -32,6 +42,27 @@ public class AlunoService {
 
     public Aluno criar(Aluno aluno){
         return alunoRepository.save(aluno);
+    }
+
+    public Aluno associarPlano(Integer idAluno, Integer idPlano){
+        Aluno aluno = alunoRepository.findById(idAluno)
+                .orElseThrow(() -> new AlunoNaoEncontrado(""));
+
+        Plano plano = planoRepository.findById(idPlano)
+                .orElseThrow(() -> new PlanoNaoEncontrado(""));
+
+        AlunoPlano alunoPlano = new AlunoPlano();
+
+        alunoPlano.setAluno(aluno);
+        alunoPlano.setPlano(plano);
+        alunoPlano.setDataInicio(LocalDate.now());
+        alunoPlano.setDataFim(LocalDate.now().plusDays(plano.getValidadeDias()));
+        alunoPlano.setAtivo(true);
+
+        alunoPlanoRepository.save(alunoPlano);
+
+        return alunoRepository.findById(idAluno)
+                .orElseThrow(() -> new AlunoNaoEncontrado(""));
     }
 
     public Aluno editar(Aluno aluno, Integer id){

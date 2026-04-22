@@ -3,6 +3,7 @@ package com.pilates.thais.almeida.mapper;
 import com.pilates.thais.almeida.dto.aluno.AlunoRequestDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoResponseDto;
 import com.pilates.thais.almeida.entity.Aluno;
+import com.pilates.thais.almeida.entity.AlunoPlano;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +22,13 @@ public class AlunoMapper {
         dto.setDataNascimento(entity.getDataNascimento());
         dto.setTelefone(entity.getTelefone());
         dto.setFichaAnamnese(entity.getFichaAnamnese());
+
+        dto.setPlanos(
+                entity.getAlunoPlanos()
+                        .stream()
+                        .map(AlunoMapper::toPlanoResponse)
+                        .toList()
+        );
 
         return dto;
     }
@@ -44,5 +52,23 @@ public class AlunoMapper {
         aluno.setFichaAnamnese(dto.getFichaAnamnese());
 
         return aluno;
+    }
+
+    private static AlunoResponseDto.AlunoPlanoResponseDto toPlanoResponse(AlunoPlano entity){
+
+        AlunoResponseDto.AlunoPlanoResponseDto dto =
+                new AlunoResponseDto.AlunoPlanoResponseDto();
+
+        dto.setId(entity.getPlano().getId());
+        dto.setNome(entity.getPlano().getNome());
+        dto.setFrequenciaSemanal(entity.getPlano().getFrequenciaSemanal());
+        dto.setValidadeDias(entity.getPlano().getValidadeDias());
+        dto.setValorMensal(entity.getPlano().getValorMensal());
+
+        dto.setDataInicio(entity.getDataInicio());
+        dto.setDataFim(entity.getDataFim());
+        dto.setAtivo(entity.getAtivo());
+
+        return dto;
     }
 }

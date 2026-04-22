@@ -3,6 +3,8 @@ package com.pilates.thais.almeida.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Aluno {
@@ -20,6 +22,9 @@ public class Aluno {
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
     private String fichaAnamnese;
+
+    @OneToMany(mappedBy = "aluno")
+    private List<AlunoPlano> alunoPlanos = new ArrayList<>();
 
     public Integer getId() {
         return id;
@@ -91,5 +96,13 @@ public class Aluno {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public List<AlunoPlano> getAlunoPlanos() {
+        return alunoPlanos;
+    }
+
+    public void setAlunoPlanos(List<AlunoPlano> alunoPlanos) {
+        this.alunoPlanos = alunoPlanos;
     }
 }
