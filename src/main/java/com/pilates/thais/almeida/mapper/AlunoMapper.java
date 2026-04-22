@@ -1,10 +1,10 @@
 package com.pilates.thais.almeida.mapper;
 
+import com.pilates.thais.almeida.dto.aluno.AlunoDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoRequestDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoResponseDto;
 import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoPlano;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,6 +12,22 @@ public class AlunoMapper {
 
     public static AlunoResponseDto toResponse(Aluno entity){
         AlunoResponseDto dto = new AlunoResponseDto();
+
+        dto.setNome(entity.getNome());
+        dto.setCpf(entity.getCpf());
+        dto.setEmail(entity.getEmail());
+        dto.setAtivo(entity.getAtivo());
+        dto.setDataCadastro(entity.getDataCadastro());
+        dto.setId(entity.getId());
+        dto.setDataNascimento(entity.getDataNascimento());
+        dto.setTelefone(entity.getTelefone());
+        dto.setFichaAnamnese(entity.getFichaAnamnese());
+
+        return dto;
+    }
+
+    public static AlunoDetailsResponseDto toResponseDetails(Aluno entity){
+        AlunoDetailsResponseDto dto = new AlunoDetailsResponseDto();
 
         dto.setNome(entity.getNome());
         dto.setCpf(entity.getCpf());
@@ -54,10 +70,10 @@ public class AlunoMapper {
         return aluno;
     }
 
-    private static AlunoResponseDto.AlunoPlanoResponseDto toPlanoResponse(AlunoPlano entity){
+    private static AlunoDetailsResponseDto.AlunoPlanoResponseDto toPlanoResponse(AlunoPlano entity){
 
-        AlunoResponseDto.AlunoPlanoResponseDto dto =
-                new AlunoResponseDto.AlunoPlanoResponseDto();
+        AlunoDetailsResponseDto.AlunoPlanoResponseDto dto =
+                new AlunoDetailsResponseDto.AlunoPlanoResponseDto();
 
         dto.setIdPlano(entity.getPlano().getId());
         dto.setIdAlunoPlano(entity.getId());
@@ -71,5 +87,11 @@ public class AlunoMapper {
         dto.setAtivo(entity.getAtivo());
 
         return dto;
+    }
+
+    public static List<AlunoDetailsResponseDto> toResponseDetails(List<Aluno> entities){
+        return entities.stream()
+                .map(AlunoMapper::toResponseDetails)
+                .toList();
     }
 }
