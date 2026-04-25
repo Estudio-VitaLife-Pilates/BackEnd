@@ -1,6 +1,7 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
+import com.pilates.thais.almeida.entity.AlunoTurma;
 import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.entity.Turma;
 import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
@@ -53,5 +54,10 @@ public class TurmaService {
     public Turma buscarPorId(Integer id) {
         return turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
 
+    }
+
+
+    public Turma buscarAlunosPorTurma(Integer id) {
+        return turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
     }
 }

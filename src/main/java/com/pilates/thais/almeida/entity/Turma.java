@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
+
 @Entity
 public class Turma {
     @Id
@@ -15,8 +17,16 @@ public class Turma {
     private Integer duracaoMinutos;
     private Integer capacidadeMax;
     private Boolean ativa;
+    @OneToMany(mappedBy = "turma")
+    private List<AlunoTurma> alunos;
 
+    public List<AlunoTurma> getAlunos() {
+        return alunos;
+    }
 
+    public void setAlunos(List<AlunoTurma> alunos) {
+        this.alunos = alunos;
+    }
 
     public enum DiaSemana {
         SEGUNDA,

@@ -1,5 +1,6 @@
 package com.pilates.thais.almeida.controller;
 
+import com.pilates.thais.almeida.dto.turma.TurmaDetailsResponseDto;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.dto.turma.TurmaResponseDto;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
@@ -40,5 +41,12 @@ public class TurmaController {
         turmaService.inativar(id);
         return ResponseEntity.status(204).build();
     }
+    // Buscar alunos por turma
+    @GetMapping("/{id}/alunos")
+    public ResponseEntity<TurmaDetailsResponseDto> buscarAlunosPorTurma(@PathVariable Integer id){
+        return ResponseEntity.status(200).body(TurmaMapper.toResponseDetails(turmaService.buscarAlunosPorTurma(id)));
+    }
+
+
 
 }
