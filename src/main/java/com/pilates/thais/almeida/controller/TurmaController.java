@@ -23,6 +23,10 @@ public class TurmaController {
         return ResponseEntity.status(200).body(TurmaMapper.toResponse(turmaService.listar()));
 
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<TurmaResponseDto>buscarPorId(@PathVariable Integer id){
+        return ResponseEntity.status(200).body(TurmaMapper.toResponse(turmaService.buscarPorId(id)));
+    }
     @PostMapping
     public ResponseEntity<TurmaResponseDto> cadastrarTurma(@Valid @RequestBody TurmaRequestDto requestDto){
         return  ResponseEntity.status(201).body(TurmaMapper.toResponse(turmaService.cadastrar(requestDto)) );

@@ -49,4 +49,9 @@ public class TurmaService {
         turma.setAtiva(false);
         turmaRepository.save(turma);
     }
+
+    public Turma buscarPorId(Integer id) {
+        return turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
+
+    }
 }
