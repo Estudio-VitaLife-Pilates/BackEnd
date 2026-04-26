@@ -1,27 +1,34 @@
 package com.pilates.thais.almeida.service;
 
+import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
+import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoTurma;
-import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.entity.Turma;
-import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
+import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
+import com.pilates.thais.almeida.repository.AlunoRepository;
+import com.pilates.thais.almeida.repository.AlunoTurmaRepository;
 import com.pilates.thais.almeida.repository.ProfessorRepository;
 import com.pilates.thais.almeida.repository.TurmaRepository;
-import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class TurmaService {
     private final TurmaRepository turmaRepository;
+    private final AlunoRepository alunoRepository;
+    private final AlunoTurmaRepository alunoTurmaRepository;
 
-    public TurmaService(TurmaRepository turmaRepository, ProfessorRepository professorRepository) {
+    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository) {
         this.turmaRepository = turmaRepository;
-
+        this.alunoRepository = alunoRepository;
+        this.alunoTurmaRepository = alunoTurmaRepository;
     }
+
 
     public List<Turma> listar() {
         return turmaRepository.findTurmasByAtivaTrue();
@@ -59,5 +66,33 @@ public class TurmaService {
 
     public Turma buscarAlunosPorTurma(Integer id) {
         return turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
+    }
+
+
+    public Turma cadastrarAlunoEmUmaTurma(Integer id, TurmaAlunoRequest alunoId) {
+        Aluno aluno= alunoRepository.findById(alunoId.getAlunoId()).orElseThrow(()->new AlunoNaoEncontrado("Aluno nao encontrado"));
+        Turma turma= turmaRepository.findById(id).orElseThrow(()-> new TurmaNaoEncontrada("Turma nao encontrada"));
+        AlunoTurma alunoTurma=new AlunoTurma();
+        alunoTurma.setAluno(aluno);
+        alunoTurma.setTurma(turma);
+        alunoTurma.setAtivo(true);
+        alunoTurma.setDataInicio(LocalDate.now());
+    alunoTurmaRepository.save(alunoTurma);
+    return turma;
+    }
+
+    public Turma excluirAlunoDaTurma(Integer id, Integer alunoId) {
+        AlunoTurma alunoTurma= alunoTurmaRepository.findByAlunoIdAndTurmaId(alunoId,id);
+        alunoTurmaRepository.removeById(alunoTurma.getId());
+        return alunoTurma.getTurma();
+
+
+    }
+
+    public Integer vagasDisponiveis(Integer id) {
+        Integer ocupadas= alunoTurmaRepository.countByTurmaIdAndAtivoTrue(id);
+        Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada(""));
+        return turma.getCapacidadeMax()-ocupadas;
+
     }
 }

@@ -56,4 +56,6 @@ public class AlunoTurma {
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
     }
+
+
 }
