@@ -10,4 +10,5 @@ public interface TurmaRepository extends JpaRepository<Turma,Integer> {
 
     List<Turma> findTurmasByAtivaTrue();
 
+    List<Turma> findByDiaSemanaIgnoreCase(String diaSemana);
 }

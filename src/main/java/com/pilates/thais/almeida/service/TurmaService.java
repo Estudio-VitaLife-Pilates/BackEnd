@@ -2,6 +2,7 @@ package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
+import com.pilates.thais.almeida.dto.turma.TurmaResponseDto;
 import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoTurma;
 import com.pilates.thais.almeida.entity.Turma;
@@ -93,6 +94,22 @@ public class TurmaService {
         Integer ocupadas= alunoTurmaRepository.countByTurmaIdAndAtivoTrue(id);
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada(""));
         return turma.getCapacidadeMax()-ocupadas;
+
+    }
+
+    public List<Turma> buscarPorDiaDaSemana(String diaSemana) {
+
+
+
+            List<Turma> turmas;
+
+            if (diaSemana != null && !diaSemana.isBlank()) {
+                turmas = turmaRepository.findByDiaSemanaIgnoreCase(diaSemana);
+            } else {
+                turmas = turmaRepository.findAll();
+            }
+
+            return turmas;
 
     }
 }

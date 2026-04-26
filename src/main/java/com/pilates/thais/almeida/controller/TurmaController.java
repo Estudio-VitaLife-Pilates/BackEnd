@@ -66,7 +66,13 @@ public class TurmaController {
     public ResponseEntity<Integer> vagasDisponiveis(@PathVariable Integer id){
         return ResponseEntity.status(200).body(turmaService.vagasDisponiveis(id));
     }
-
+    //buscar por dia da semana
+    @GetMapping("/buscar")
+    public ResponseEntity<List<TurmaResponseDto>> buscarPorDiaDaSemana(
+            @RequestParam(required = false) String diaSemana
+    ) {
+        return ResponseEntity.ok(  TurmaMapper.toResponse(turmaService.buscarPorDiaDaSemana(diaSemana)) );
+    }
 
 
 }
