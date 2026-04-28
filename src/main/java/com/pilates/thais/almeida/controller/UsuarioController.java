@@ -5,6 +5,7 @@ import com.pilates.thais.almeida.entity.Usuario;
 import com.pilates.thais.almeida.mapper.UsuarioMapper;
 import com.pilates.thais.almeida.service.UsuarioService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +18,7 @@ import java.time.Duration;
 import java.util.List;
 
 @RestController
+@Tag(name = "Usuários", description = "Autenticação e usuários")
 @RequestMapping("/usuarios")
 public class UsuarioController {
     public static final String COOKIE_NOME = "authToken";
