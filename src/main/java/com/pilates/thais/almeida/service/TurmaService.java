@@ -36,11 +36,24 @@ public class TurmaService {
 
     }
 
-    public Turma cadastrar( TurmaRequestDto requestDto) {
-        Turma turma= TurmaMapper.toEntity(requestDto);
+    public Turma cadastrar(TurmaRequestDto requestDto) {
+
+        boolean turmaExiste = turmaRepository
+                .existsByHoraInicioAndDiaSemana(
+
+                        requestDto.getHoraInicio(),
+                        requestDto.getDiaSemana()
+                );
+
+        if (turmaExiste) {
+            throw new RuntimeException(
+                    "Professor já possui uma turma nesse horário."
+            );
+        }
+
+        Turma turma = TurmaMapper.toEntity(requestDto);
+
         return turmaRepository.save(turma);
-
-
     }
 
     public Turma atualizar( TurmaRequestDto requestDto, Integer id) {
