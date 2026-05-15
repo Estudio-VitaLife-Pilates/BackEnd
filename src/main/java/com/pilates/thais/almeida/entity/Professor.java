@@ -4,7 +4,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import org.springframework.stereotype.Service;
 
 @Entity
 public class Professor {
@@ -15,8 +14,18 @@ public class Professor {
     private String nome;
     private String telefone;
     private Boolean ativo;
-    private  String email;
+    private String email;
 
+    public Professor(Integer id, String nome, String telefone, Boolean ativo, String email) {
+        this.id = id;
+        this.nome = nome;
+        this.telefone = telefone;
+        this.ativo = ativo;
+        this.email = email;
+    }
+
+    public Professor() {
+    }
 
     public Integer getId() {
         return id;
