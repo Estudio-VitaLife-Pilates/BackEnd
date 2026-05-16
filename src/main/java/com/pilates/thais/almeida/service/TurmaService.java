@@ -36,11 +36,24 @@ public class TurmaService {
 
     }
 
-    public Turma cadastrar( TurmaRequestDto requestDto) {
-        Turma turma= TurmaMapper.toEntity(requestDto);
+    public Turma cadastrar(TurmaRequestDto requestDto) {
+
+        boolean turmaExiste = turmaRepository
+                .existsByHoraInicioAndDiaSemana(
+
+                        requestDto.getHoraInicio(),
+                        requestDto.getDiaSemana()
+                );
+
+        if (turmaExiste) {
+            throw new RuntimeException(
+                    "Professor já possui uma turma nesse horário."
+            );
+        }
+
+        Turma turma = TurmaMapper.toEntity(requestDto);
+
         return turmaRepository.save(turma);
-
-
     }
 
     public Turma atualizar( TurmaRequestDto requestDto, Integer id) {
@@ -69,17 +82,31 @@ public class TurmaService {
         return turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
     }
 
-
     public Turma cadastrarAlunoEmUmaTurma(Integer id, TurmaAlunoRequest alunoId) {
-        Aluno aluno= alunoRepository.findById(alunoId.getAlunoId()).orElseThrow(()->new AlunoNaoEncontrado("Aluno nao encontrado"));
-        Turma turma= turmaRepository.findById(id).orElseThrow(()-> new TurmaNaoEncontrada("Turma nao encontrada"));
-        AlunoTurma alunoTurma=new AlunoTurma();
+
+        Aluno aluno = alunoRepository.findById(alunoId.getAlunoId())
+                .orElseThrow(() -> new AlunoNaoEncontrado("Aluno nao encontrado"));
+
+        Turma turma = turmaRepository.findById(id)
+                .orElseThrow(() -> new TurmaNaoEncontrada("Turma nao encontrada"));
+
+        boolean alunoJaExiste = alunoTurmaRepository
+                .existsByAlunoIdAndTurmaId(aluno.getId(), turma.getId());
+
+        if (alunoJaExiste) {
+            throw new RuntimeException("Aluno já cadastrado nessa turma");
+        }
+
+        AlunoTurma alunoTurma = new AlunoTurma();
+
         alunoTurma.setAluno(aluno);
         alunoTurma.setTurma(turma);
         alunoTurma.setAtivo(true);
         alunoTurma.setDataInicio(LocalDate.now());
-    alunoTurmaRepository.save(alunoTurma);
-    return turma;
+
+        alunoTurmaRepository.save(alunoTurma);
+
+        return turma;
     }
 
     public Turma excluirAlunoDaTurma(Integer id, Integer alunoId) {

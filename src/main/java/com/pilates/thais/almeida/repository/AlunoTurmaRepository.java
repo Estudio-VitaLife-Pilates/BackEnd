@@ -14,4 +14,6 @@ AlunoTurma findByTurmaIdAndAtivoTrue(Integer id);
     void removeById(Integer id);
 
     Integer countByTurmaIdAndAtivoTrue(Integer id);
+
+    boolean existsByAlunoIdAndTurmaId(Integer id, Integer id1);
 }
