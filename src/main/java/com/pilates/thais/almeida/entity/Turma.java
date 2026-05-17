@@ -7,7 +7,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Entity
-public class Turma {
+public class Turma extends Auditavel{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

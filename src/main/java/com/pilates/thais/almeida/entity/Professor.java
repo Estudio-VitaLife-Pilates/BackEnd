@@ -6,7 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class Professor {
+public class Professor extends Auditavel{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
