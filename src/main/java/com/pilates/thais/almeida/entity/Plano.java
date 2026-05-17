@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Plano {
+public class Plano extends Auditavel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

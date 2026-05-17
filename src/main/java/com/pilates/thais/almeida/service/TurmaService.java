@@ -47,7 +47,7 @@ public class TurmaService {
 
         if (turmaExiste) {
             throw new RuntimeException(
-                    "Professor já possui uma turma nesse horário."
+                    "Ja existe uma turma nesse horário."
             );
         }
 
