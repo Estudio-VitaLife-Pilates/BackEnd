@@ -1,8 +1,10 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.config.GerenciadorTokenJwt;
+import com.pilates.thais.almeida.dto.usuario.UsuarioListarDto;
 import com.pilates.thais.almeida.dto.usuario.UsuarioTokenDto;
 import com.pilates.thais.almeida.entity.Usuario;
+import com.pilates.thais.almeida.exceptions.CadastroUsuarioConflitoEmail;
 import com.pilates.thais.almeida.repository.UsuarioRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +17,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +35,9 @@ class UsuarioServiceTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UsuarioService service;
@@ -185,6 +193,118 @@ class UsuarioServiceTest {
         Assertions.assertEquals("João Silva", usuario.getNome());
 
         Mockito.verify(repository, Mockito.times(1)).findByEmail(email);
+    }
+
+    // -------------------- POST /usuarios/logout --------------------
+
+    @Test
+    @DisplayName("Deve limpar o contexto de segurança ao fazer logout")
+    void deveLimparContextoDeSegurancaAoFazerLogout() {
+
+        // Given
+        Authentication authentication = Mockito.mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // When
+        service.logout();
+
+        // Then
+        Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    // -------------------- POST /usuarios (criar) --------------------
+
+    @Test
+    @DisplayName("Deve criar usuário com sucesso")
+    void deveCriarUsuarioComSucesso() {
+
+        // Given
+        Usuario usuario = new Usuario();
+        usuario.setNome("Maria Silva");
+        usuario.setEmail("maria@gmail.com");
+        usuario.setSenha("senha123");
+
+        // When
+        Mockito.when(repository.existsUsuarioByEmail(usuario.getEmail())).thenReturn(false);
+        Mockito.when(passwordEncoder.encode("senha123")).thenReturn("$2a$10$senhaCriptografada");
+
+        service.criar(usuario);
+
+        // Then
+        Assertions.assertEquals("$2a$10$senhaCriptografada", usuario.getSenha());
+
+        Mockito.verify(passwordEncoder, Mockito.times(1)).encode("senha123");
+        Mockito.verify(repository, Mockito.times(1)).existsUsuarioByEmail(usuario.getEmail());
+        Mockito.verify(repository, Mockito.times(1)).save(usuario);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao criar usuário com email já cadastrado")
+    void deveLancarExcecaoAoCriarUsuarioComEmailJaCadastrado() {
+
+        // Given
+        Usuario usuario = new Usuario();
+        usuario.setNome("Maria Silva");
+        usuario.setEmail("maria@gmail.com");
+        usuario.setSenha("senha123");
+
+        // When
+        Mockito.when(passwordEncoder.encode(Mockito.any())).thenReturn("$2a$10$senhaCriptografada");
+        Mockito.when(repository.existsUsuarioByEmail(usuario.getEmail())).thenReturn(true);
+
+        // Then
+        Assertions.assertThrows(CadastroUsuarioConflitoEmail.class, () -> {
+            service.criar(usuario);
+        });
+
+        Mockito.verify(repository, Mockito.times(1)).existsUsuarioByEmail(usuario.getEmail());
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    // -------------------- GET /usuarios --------------------
+
+    @Test
+    @DisplayName("Deve retornar lista de usuários corretamente")
+    void deveRetornarListaDeUsuarios() {
+
+        // Given
+        Usuario u1 = new Usuario();
+        u1.setId(1);
+        u1.setNome("João Silva");
+        u1.setEmail("joao@gmail.com");
+
+        Usuario u2 = new Usuario();
+        u2.setId(2);
+        u2.setNome("Maria Silva");
+        u2.setEmail("maria@gmail.com");
+
+        // When
+        Mockito.when(repository.findAll()).thenReturn(List.of(u1, u2));
+
+        List<UsuarioListarDto> resultado = service.listarTodos();
+
+        // Then
+        Assertions.assertFalse(resultado.isEmpty());
+        Assertions.assertEquals(2, resultado.size());
+        Assertions.assertEquals("João Silva", resultado.get(0).getNome());
+        Assertions.assertEquals("Maria Silva", resultado.get(1).getNome());
+
+        Mockito.verify(repository, Mockito.times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("Deve retornar lista vazia quando não houver usuários")
+    void deveRetornarListaVaziaDeUsuarios() {
+
+        // When
+        Mockito.when(repository.findAll()).thenReturn(List.of());
+
+        List<UsuarioListarDto> resultado = service.listarTodos();
+
+        // Then
+        Assertions.assertTrue(resultado.isEmpty());
+
+        Mockito.verify(repository, Mockito.times(1)).findAll();
     }
 }
 
