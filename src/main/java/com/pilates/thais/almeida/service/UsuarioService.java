@@ -67,4 +67,8 @@ public class UsuarioService {
         return usuariosEncontrados.stream().map(UsuarioMapper::toListarDto).toList();
 
     }
+
+    public void logout() {
+        SecurityContextHolder.clearContext();
+    }
 }
