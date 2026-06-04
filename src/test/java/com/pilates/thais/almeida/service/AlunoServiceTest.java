@@ -1,7 +1,11 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.Aluno;
+import com.pilates.thais.almeida.entity.AlunoPlano;
+import com.pilates.thais.almeida.entity.Plano;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
+import com.pilates.thais.almeida.exceptions.AlunoPlanoNaoEncontrado;
+import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
 import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
 import com.pilates.thais.almeida.repository.PlanoRepository;
@@ -159,5 +163,251 @@ class AlunoServiceTest {
         Assertions.assertTrue(resultado.isEmpty());
 
         Mockito.verify(alunoRepository, Mockito.times(1)).findAllByNomeContainingIgnoreCase("xyz");
+    }
+
+    // -------------------- POST /alunos --------------------
+
+    @Test
+    @DisplayName("Deve cadastrar um aluno corretamente")
+    void deveCadastrarUmAluno() {
+
+        // Given
+        Aluno aluno = new Aluno();
+        aluno.setNome("Ana Paula");
+        aluno.setEmail("ana@gmail.com");
+        aluno.setAtivo(true);
+
+        Aluno alunoSalvo = new Aluno();
+        alunoSalvo.setId(1);
+        alunoSalvo.setNome("Ana Paula");
+        alunoSalvo.setEmail("ana@gmail.com");
+        alunoSalvo.setAtivo(true);
+
+        // When
+        Mockito.when(alunoRepository.save(aluno)).thenReturn(alunoSalvo);
+
+        Aluno resultado = service.criar(aluno);
+
+        // Then
+        Assertions.assertNotNull(resultado);
+        Assertions.assertEquals(1, resultado.getId());
+        Assertions.assertEquals("Ana Paula", resultado.getNome());
+
+        Mockito.verify(alunoRepository, Mockito.times(1)).save(aluno);
+    }
+
+    // -------------------- POST /alunos/planos/{idAluno}/{idPlano} --------------------
+
+    @Test
+    @DisplayName("Deve associar plano a um aluno corretamente")
+    void deveAssociarPlanoAoAluno() {
+
+        // Given
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+        aluno.setNome("Ana Paula");
+        aluno.setAtivo(true);
+
+        Plano plano = new Plano();
+        plano.setId(1);
+        plano.setNome("Plano Mensal");
+        plano.setValidadeDias(30);
+
+        // When
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(planoRepository.findById(1)).thenReturn(Optional.of(plano));
+
+        Aluno resultado = service.associarPlano(1, 1);
+
+        // Then
+        Assertions.assertNotNull(resultado);
+        Assertions.assertEquals(1, resultado.getId());
+
+        Mockito.verify(alunoRepository, Mockito.times(2)).findById(1);
+        Mockito.verify(planoRepository, Mockito.times(1)).findById(1);
+        Mockito.verify(alunoPlanoRepository, Mockito.times(1)).save(Mockito.any(AlunoPlano.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao associar plano a aluno inexistente")
+    void deveLancarExcecaoAoAssociarPlanoAlunoInexistente() {
+
+        // When
+        Mockito.when(alunoRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Then
+        Assertions.assertThrows(AlunoNaoEncontrado.class, () -> {
+            service.associarPlano(99, 1);
+        });
+
+        Mockito.verify(alunoRepository, Mockito.times(1)).findById(99);
+        Mockito.verify(planoRepository, Mockito.never()).findById(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao associar plano inexistente ao aluno")
+    void deveLancarExcecaoAoAssociarPlanoInexistente() {
+
+        // Given
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+        aluno.setNome("Ana Paula");
+
+        // When
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(planoRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Then
+        Assertions.assertThrows(PlanoNaoEncontrado.class, () -> {
+            service.associarPlano(1, 99);
+        });
+
+        Mockito.verify(planoRepository, Mockito.times(1)).findById(99);
+        Mockito.verify(alunoPlanoRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    // -------------------- DELETE /alunos/planos/{idAluno}/{idPlano}/{idAlunoPlano}/desativar --------------------
+
+    @Test
+    @DisplayName("Deve desativar plano do aluno corretamente")
+    void deveDesativarPlanoDoAluno() {
+
+        // Given
+        AlunoPlano alunoPlano = new AlunoPlano();
+        alunoPlano.setId(1);
+        alunoPlano.setAtivo(true);
+
+        // When
+        Mockito.when(alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(1, 1, 1)).thenReturn(Optional.of(alunoPlano));
+
+        service.desativarPlano(1, 1, 1);
+
+        // Then
+        Assertions.assertFalse(alunoPlano.getAtivo());
+
+        Mockito.verify(alunoPlanoRepository, Mockito.times(1)).findByIdAndAluno_IdAndPlano_Id(1, 1, 1);
+        Mockito.verify(alunoPlanoRepository, Mockito.times(1)).save(alunoPlano);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao desativar plano não encontrado")
+    void deveLancarExcecaoAoDesativarPlanoNaoEncontrado() {
+
+        // When
+        Mockito.when(alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(99, 1, 1)).thenReturn(Optional.empty());
+
+        // Then
+        Assertions.assertThrows(AlunoPlanoNaoEncontrado.class, () -> {
+            service.desativarPlano(1, 1, 99);
+        });
+
+        Mockito.verify(alunoPlanoRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    // -------------------- PUT /alunos/planos/{idAluno}/{idPlano}/{idAlunoPlano}/reativar --------------------
+
+    @Test
+    @DisplayName("Deve reativar plano do aluno corretamente")
+    void deveReativarPlanoDoAluno() {
+
+        // Given
+        AlunoPlano alunoPlano = new AlunoPlano();
+        alunoPlano.setId(1);
+        alunoPlano.setAtivo(false);
+
+        // When
+        Mockito.when(alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(1, 1, 1)).thenReturn(Optional.of(alunoPlano));
+
+        service.reativarPlano(1, 1, 1);
+
+        // Then
+        Assertions.assertTrue(alunoPlano.getAtivo());
+
+        Mockito.verify(alunoPlanoRepository, Mockito.times(1)).findByIdAndAluno_IdAndPlano_Id(1, 1, 1);
+        Mockito.verify(alunoPlanoRepository, Mockito.times(1)).save(alunoPlano);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao reativar plano não encontrado")
+    void deveLancarExcecaoAoReativarPlanoNaoEncontrado() {
+
+        // When
+        Mockito.when(alunoPlanoRepository.findByIdAndAluno_IdAndPlano_Id(99, 1, 1)).thenReturn(Optional.empty());
+
+        // Then
+        Assertions.assertThrows(AlunoPlanoNaoEncontrado.class, () -> {
+            service.reativarPlano(1, 1, 99);
+        });
+
+        Mockito.verify(alunoPlanoRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    // -------------------- PUT /alunos/{id} --------------------
+
+    @Test
+    @DisplayName("Deve atualizar dados do aluno corretamente")
+    void deveAtualizarDadosDoAluno() {
+
+        // Given
+        Aluno alunoExistente = new Aluno();
+        alunoExistente.setId(1);
+        alunoExistente.setNome("Ana Paula");
+        alunoExistente.setEmail("ana@gmail.com");
+
+        Aluno alunoAtualizado = new Aluno();
+        alunoAtualizado.setNome("Ana Paula Silva");
+        alunoAtualizado.setEmail("ana.silva@gmail.com");
+
+        Aluno alunoSalvo = new Aluno();
+        alunoSalvo.setId(1);
+        alunoSalvo.setNome("Ana Paula Silva");
+        alunoSalvo.setEmail("ana.silva@gmail.com");
+
+        // When
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(alunoExistente));
+        Mockito.when(alunoRepository.save(alunoAtualizado)).thenReturn(alunoSalvo);
+
+        Aluno resultado = service.editar(alunoAtualizado, 1);
+
+        // Then
+        Assertions.assertNotNull(resultado);
+        Assertions.assertEquals(1, resultado.getId());
+        Assertions.assertEquals("Ana Paula Silva", resultado.getNome());
+
+        Mockito.verify(alunoRepository, Mockito.times(1)).findById(1);
+        Mockito.verify(alunoRepository, Mockito.times(1)).save(alunoAtualizado);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao atualizar aluno inexistente")
+    void deveLancarExcecaoAoAtualizarAlunoInexistente() {
+
+        // Given
+        Aluno alunoAtualizado = new Aluno();
+        alunoAtualizado.setNome("Ana Paula Silva");
+
+        // When
+        Mockito.when(alunoRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Then
+        Assertions.assertThrows(AlunoNaoEncontrado.class, () -> {
+            service.editar(alunoAtualizado, 99);
+        });
+
+        Mockito.verify(alunoRepository, Mockito.times(1)).findById(99);
+        Mockito.verify(alunoRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    // -------------------- DELETE /alunos/{id} --------------------
+
+    @Test
+    @DisplayName("Deve deletar aluno por ID corretamente")
+    void deveDeletarAlunoPorId() {
+
+        // When
+        service.deletarPorId(1);
+
+        // Then
+        Mockito.verify(alunoRepository, Mockito.times(1)).deleteById(1);
     }
 }
