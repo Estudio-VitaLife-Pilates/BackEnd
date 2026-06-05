@@ -97,7 +97,7 @@ class TurmaServiceTest {
                 .thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> service.cadastrar(turmaRequest));
-        assertEquals("Professor já possui uma turma nesse horário.", ex.getMessage());
+        assertEquals("Ja existe uma turma nesse horário.", ex.getMessage());
     }
 
     @Test
