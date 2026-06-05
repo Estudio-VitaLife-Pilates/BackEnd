@@ -12,13 +12,17 @@ public class Turma extends Auditavel{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @Enumerated(EnumType.STRING)
-    private DiaSemana diaSemana ;
+    private DiaSemana diaSemana;
     private LocalTime horaInicio;
     private Integer duracaoMinutos;
     private Integer capacidadeMax;
     private Boolean ativa;
     @OneToMany(mappedBy = "turma")
     private List<AlunoTurma> alunos;
+
+    @ManyToOne
+    @JoinColumn(name = "professor_id")
+    private Professor professor;
 
     public List<AlunoTurma> getAlunos() {
         return alunos;
@@ -99,4 +103,11 @@ public class Turma extends Auditavel{
         this.ativa = ativa;
     }
 
+    public Professor getProfessor() {
+        return professor;
+    }
+
+    public void setProfessor(Professor professor) {
+        this.professor = professor;
+    }
 }

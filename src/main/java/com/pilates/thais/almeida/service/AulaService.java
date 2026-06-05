@@ -1,9 +1,8 @@
 package com.pilates.thais.almeida.service;
 
-import com.pilates.thais.almeida.entity.Aula;
-import com.pilates.thais.almeida.entity.Turma;
-import com.pilates.thais.almeida.entity.Professor;
+import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.exceptions.AulaNaoEncontrada;
+import com.pilates.thais.almeida.repository.AulaAlunoRepository;
 import com.pilates.thais.almeida.repository.AulaRepository;
 import com.pilates.thais.almeida.repository.TurmaRepository;
 import com.pilates.thais.almeida.repository.ProfessorRepository;
@@ -19,11 +18,13 @@ public class AulaService {
     private final AulaRepository aulaRepository;
     private final TurmaRepository turmaRepository;
     private final ProfessorRepository professorRepository;
+    private final AulaAlunoRepository aulaAlunoRepository;
 
-    public AulaService(AulaRepository aulaRepository, TurmaRepository turmaRepository, ProfessorRepository professorRepository) {
+    public AulaService(AulaRepository aulaRepository, TurmaRepository turmaRepository, ProfessorRepository professorRepository, AulaAlunoRepository aulaAlunoRepository) {
         this.aulaRepository = aulaRepository;
         this.turmaRepository = turmaRepository;
         this.professorRepository = professorRepository;
+        this.aulaAlunoRepository = aulaAlunoRepository;
     }
 
     public List<Aula> obterTodas() {
@@ -52,6 +53,32 @@ public class AulaService {
         aula.setMarcada(true);
 
         return aulaRepository.save(aula);
+    }
+
+    public Aula criarAula(Integer turmaId, Integer professorId, LocalDate dia, Aluno aluno) {
+        Turma turma = turmaRepository.findById(turmaId)
+                .orElseThrow(() -> new RuntimeException("Turma não encontrada"));
+
+        Professor professor = professorRepository.findById(professorId)
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+
+        Aula aula = new Aula();
+
+        aula.setTurma(turma);
+        aula.setProfessor(professor);
+        aula.setDataAula(dia);
+        aula.setMarcada(true);
+
+        // criando aulaaluno - precisa fazer para o outro metodo tb ok kk precisa pensar dps talvez precisa dar uma mudada nos testes afs vei
+        AulaAluno aulaAluno = new AulaAluno();
+
+        aulaAluno.setAula(aula);
+        aulaAluno.setAluno(aluno);
+        aulaAluno.setAulaOrigem(aula);
+
+        Aula aulaSaved = aulaRepository.save(aula);
+        aulaAlunoRepository.save(aulaAluno);
+        return aulaSaved;
     }
 
     public Aula editarAula(Integer id, Aula aula) {
