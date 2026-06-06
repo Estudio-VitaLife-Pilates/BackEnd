@@ -3,9 +3,8 @@ package com.pilates.thais.almeida.service;
 import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.Plano;
-import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.AlunoPlanoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
+import com.pilates.thais.almeida.entity.Professor;
+import com.pilates.thais.almeida.exceptions.*;
 import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
 import com.pilates.thais.almeida.repository.PlanoRepository;
@@ -42,6 +41,9 @@ public class AlunoService {
     }
 
     public Aluno criar(Aluno aluno){
+        if(alunoRepository.existsAlunoByEmail(aluno.getEmail())){
+            throw new CadastroAlunoConflitoEmail("Aluno com este email já existe");
+        }
         return alunoRepository.save(aluno);
     }
 
@@ -97,5 +99,12 @@ public class AlunoService {
 
     public void deletarPorId(Integer id){
         alunoRepository.deleteById(id);
+    }
+    public void inativarPorId(Integer id){
+
+        Aluno aluno=alunoRepository.findById(id).orElseThrow
+                (()->new AlunoNaoEncontrado("Aluno não encontrado"));
+        aluno.setAtivo(false);
+        alunoRepository.save(aluno);
     }
 }

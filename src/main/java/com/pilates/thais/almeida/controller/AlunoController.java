@@ -108,12 +108,12 @@ public class AlunoController {
         return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.editar(AlunoMapper.toEntity(request), id)));
     }
 
-    @Operation(summary = "Apagar aluno", description = "Apagar o aluno do sistema")
+    @Operation(summary = "Inativar aluno", description = "Inativar o aluno no sistema")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarAluno(
+    public ResponseEntity<Void> inativarAluno(
             @PathVariable Integer id
     ){
-        alunoService.deletarPorId(id);
+        alunoService.inativarPorId(id);
         return ResponseEntity.status(204).build();
     }
 }
