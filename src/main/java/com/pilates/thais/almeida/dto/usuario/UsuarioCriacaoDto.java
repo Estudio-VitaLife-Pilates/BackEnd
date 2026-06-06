@@ -2,11 +2,18 @@ package com.pilates.thais.almeida.dto.usuario;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class UsuarioCriacaoDto {
 
     @Size(min = 3, max = 100)
+    @NotBlank(message = "Nome é obrigatório")
+    @Pattern(
+            regexp = "^[A-Za-zÀ-ÿ\\s]+$",
+            message = "O nome deve conter apenas letras"
+    )
     @Schema(description = "Nome do usuário", example = "John Doe")
     private String nome;
 
