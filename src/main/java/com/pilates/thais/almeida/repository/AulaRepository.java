@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface AulaRepository extends JpaRepository<Aula, Integer> {
     List<Aula> findAllByDataAula(LocalDate dataAula);
-    
-    boolean existsAulaByDataAula(LocalDate dataAula);
+
+    boolean existsAulaByDataAulaAndTurma_Id(LocalDate dataAula, Integer turmaId);
 }
