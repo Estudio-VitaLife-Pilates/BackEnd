@@ -136,7 +136,7 @@ public class TurmaService {
 
         while(true){
             if(!diaTurma.isAfter(alunoPlanos.getFirst().getDataFim())){
-                if(!aulaRepository.existsAulaByDataAula(diaTurma)){
+                if(!aulaRepository.existsAulaByDataAulaAndTurma_Id(diaTurma, turma.getId())){
                     aulaService.criarAula(turma.getId(), turma.getProfessor().getId(), diaTurma, aluno);
                 }
                 diaTurma = diaTurma.plusDays(7);
