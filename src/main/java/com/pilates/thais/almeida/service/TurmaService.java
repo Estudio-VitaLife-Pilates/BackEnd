@@ -9,6 +9,7 @@ import com.pilates.thais.almeida.entity.AlunoTurma;
 import com.pilates.thais.almeida.entity.Turma;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
+import com.pilates.thais.almeida.exceptions.UsuarioJaCadastradoNoMaximoDeTurmas;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
 import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
@@ -90,8 +91,6 @@ public class TurmaService {
     }
 
     public Turma cadastrarAlunoEmUmaTurma(Integer id, TurmaAlunoRequest alunoId) {
-
-
         Aluno aluno = alunoRepository.findById(alunoId.getAlunoId())
                 .orElseThrow(() -> new AlunoNaoEncontrado("Aluno nao encontrado"));
 
@@ -102,6 +101,12 @@ public class TurmaService {
 
         if(alunoPlanos.isEmpty()){
             throw new RuntimeException("Aluno sem plano ativo");
+        }
+
+        Integer frequenciaSemanal = alunoPlanos.getFirst().getPlano().getFrequenciaSemanal();
+
+        if(frequenciaSemanal < alunoTurmaRepository.countByAlunoId(aluno.getId())+1){
+            throw new UsuarioJaCadastradoNoMaximoDeTurmas("Usuário já cadastrado no máximo de turmas que o plano permite.");
         }
 
         boolean alunoJaExiste = alunoTurmaRepository
