@@ -8,12 +8,16 @@ import org.springframework.data.jpa.repository.Modifying;
 
 public interface AlunoTurmaRepository extends JpaRepository<AlunoTurma,Integer> {
     AlunoTurma findByAlunoIdAndTurmaId(Integer alunoId, Integer id);
-AlunoTurma findByTurmaIdAndAtivoTrue(Integer id);
-@Transactional
-@Modifying
+    
+    AlunoTurma findByTurmaIdAndAtivoTrue(Integer id);
+    
+    @Transactional
+    @Modifying
     void removeById(Integer id);
 
     Integer countByTurmaIdAndAtivoTrue(Integer id);
 
     boolean existsByAlunoIdAndTurmaId(Integer id, Integer id1);
+
+    Integer countByAlunoId(Integer alunoId);
 }
