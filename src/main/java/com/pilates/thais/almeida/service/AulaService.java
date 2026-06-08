@@ -2,6 +2,7 @@ package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.exceptions.AulaNaoEncontrada;
+import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
 import com.pilates.thais.almeida.repository.AulaAlunoRepository;
 import com.pilates.thais.almeida.repository.AulaRepository;
 import com.pilates.thais.almeida.repository.TurmaRepository;
@@ -114,5 +115,20 @@ public class AulaService {
         aula.setMarcada(true);
 
         aulaRepository.save(aula);
+    }
+
+    public Aula trocarProfessor(
+            Integer idAula,
+            Integer idProfessor
+    ){
+        Aula aula = aulaRepository.findById(idAula)
+                .orElseThrow(() -> new AulaNaoEncontrada("Aula não encontrada"));
+
+        Professor professor = professorRepository.findById(idProfessor)
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
+        aula.setProfessor(professor);
+
+        return aulaRepository.save(aula);
     }
 }

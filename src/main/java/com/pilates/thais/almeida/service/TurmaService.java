@@ -3,13 +3,8 @@ package com.pilates.thais.almeida.service;
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.dto.turma.TurmaResponseDto;
-import com.pilates.thais.almeida.entity.Aluno;
-import com.pilates.thais.almeida.entity.AlunoPlano;
-import com.pilates.thais.almeida.entity.AlunoTurma;
-import com.pilates.thais.almeida.entity.Turma;
-import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
-import com.pilates.thais.almeida.exceptions.UsuarioJaCadastradoNoMaximoDeTurmas;
+import com.pilates.thais.almeida.entity.*;
+import com.pilates.thais.almeida.exceptions.*;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
 import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
@@ -28,14 +23,16 @@ public class TurmaService {
     private final AulaRepository aulaRepository;
 
     private final AulaService aulaService;
+    private final ProfessorRepository professorRepository;
 
-    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService) {
+    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository) {
         this.turmaRepository = turmaRepository;
         this.alunoRepository = alunoRepository;
         this.alunoTurmaRepository = alunoTurmaRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
         this.aulaRepository = aulaRepository;
         this.aulaService = aulaService;
+        this.professorRepository = professorRepository;
     }
 
 
@@ -182,6 +179,32 @@ public class TurmaService {
             }
 
             return turmas;
+    }
 
+    public Turma trocarProfessor(
+            Integer idTurma,
+            Integer idProfessor
+    ){
+        Turma turma = turmaRepository.findById(idTurma)
+                .orElseThrow(() -> new TurmaNaoEncontrada("Turma não encontrada"));
+
+        Professor professor = professorRepository.findById(idProfessor)
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
+        List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now(), idTurma);
+
+        // FORMA MENOS PERFORMATICA PQ VERIFIFICA TUDO DNV (se o prof existe, se a aula existe, etc, o que nao precisa nesse caso)
+//        for(Aula aula : aulasFuturas){
+//            aulaService.trocarProfessor(aula.getId(), idProfessor);
+//        }
+
+        for(Aula aula: aulasFuturas){
+            aula.setProfessor(professor);
+            aulaRepository.save(aula);
+        }
+
+        turma.setProfessor(professor);
+
+        return turmaRepository.save(turma);
     }
 }

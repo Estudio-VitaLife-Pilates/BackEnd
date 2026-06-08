@@ -12,4 +12,8 @@ public interface AulaRepository extends JpaRepository<Aula, Integer> {
     List<Aula> findAllByDataAula(LocalDate dataAula);
 
     boolean existsAulaByDataAulaAndTurma_Id(LocalDate dataAula, Integer turmaId);
+
+    boolean existsAulaById(Integer id);
+
+    List<Aula> findAllByDataAulaAfterAndTurma_Id(LocalDate dataAulaAfter, Integer turmaId);
 }

@@ -1,10 +1,12 @@
 package com.pilates.thais.almeida.controller;
 
 import com.pilates.thais.almeida.dto.aluno.AlunoRequestDto;
+import com.pilates.thais.almeida.dto.aula.AulaDetailsResponseDto;
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaDetailsResponseDto;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.dto.turma.TurmaResponseDto;
+import com.pilates.thais.almeida.mapper.AulaMapper;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
 import com.pilates.thais.almeida.service.TurmaService;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -92,5 +94,14 @@ public class TurmaController {
         return ResponseEntity.ok(  TurmaMapper.toResponse(turmaService.buscarPorDiaDaSemana(diaSemana)) );
     }
 
+    @Operation(summary = "Trocar professor", description = "Trocar o professor dessa turma - ALTERA TB DE TODAS AS AULAS POSTERIORES AO DIA DE HOJE")
+    @PutMapping("/{idTurma}/professor/{idProfessor}/trocar")
+    public ResponseEntity<TurmaDetailsResponseDto> trocarProfessor(
+            @PathVariable Integer idTurma,
+            @PathVariable Integer idProfessor
+    ) {
+        TurmaDetailsResponseDto turma = TurmaMapper.toResponseDetails(turmaService.trocarProfessor(idTurma, idProfessor));
+        return ResponseEntity.status(200).body(turma);
+    }
 
 }
