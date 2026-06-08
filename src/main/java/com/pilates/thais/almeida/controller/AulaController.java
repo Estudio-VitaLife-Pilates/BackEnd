@@ -7,6 +7,7 @@ import com.pilates.thais.almeida.mapper.AulaMapper;
 import com.pilates.thais.almeida.service.AulaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Path;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -93,5 +94,15 @@ public class AulaController {
     public ResponseEntity<Void> reativarAula(@PathVariable Integer id) {
         aulaService.reativarAula(id);
         return ResponseEntity.status(204).build();
+    }
+
+    @Operation(summary = "Trocar professor", description = "Trocar o professor dessa aula em específico (NÃO TROCA DA TURMA - APENAS DESSA AULA)")
+    @PutMapping("/{idAula}/professor/{idProfessor}/trocar")
+    public ResponseEntity<AulaDetailsResponseDto> trocarProfessor(
+            @PathVariable Integer idAula,
+            @PathVariable Integer idProfessor
+    ) {
+        AulaDetailsResponseDto aula = AulaMapper.toResponseDetails(aulaService.trocarProfessor(idAula, idProfessor));
+        return ResponseEntity.status(200).body(aula);
     }
 }
