@@ -2,16 +2,11 @@ package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
-import com.pilates.thais.almeida.entity.Aluno;
-import com.pilates.thais.almeida.entity.AlunoTurma;
-import com.pilates.thais.almeida.entity.Turma;
+import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.entity.Turma.DiaSemana;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
-import com.pilates.thais.almeida.mapper.TurmaMapper;
-import com.pilates.thais.almeida.repository.AlunoRepository;
-import com.pilates.thais.almeida.repository.AlunoTurmaRepository;
-import com.pilates.thais.almeida.repository.TurmaRepository;
+import com.pilates.thais.almeida.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,10 +35,19 @@ class TurmaServiceTest {
     @Mock
     private AlunoTurmaRepository alunoTurmaRepository;
 
+    @Mock
+    private AlunoPlanoRepository alunoPlanoRepository;
+
+    @Mock
+    private AulaRepository aulaRepository;
+
     @InjectMocks
     private TurmaService service;
 
     private TurmaRequestDto turmaRequest;
+
+    @Mock
+    private AulaService aulaService;
 
     @BeforeEach
     void setup() {
@@ -53,6 +57,29 @@ class TurmaServiceTest {
         turmaRequest.setDuracaoMinutos(60);
         turmaRequest.setCapacidadeMax(10);
         turmaRequest.setAtiva(true);
+    }
+
+    private AlunoPlano criarAlunoPlanoAtivo() {
+        Plano plano = new Plano();
+        plano.setFrequenciaSemanal(2);
+
+        AlunoPlano alunoPlano = new AlunoPlano();
+        alunoPlano.setPlano(plano);
+        alunoPlano.setDataInicio(LocalDate.now().minusDays(10));
+        alunoPlano.setDataFim(LocalDate.now().plusDays(10)); // garante que está ativo
+
+        return alunoPlano;
+    }
+
+    private Turma criarTurmaComProfessor() {
+        Professor professor = new Professor();
+        professor.setId(99);
+
+        Turma turma = new Turma(DiaSemana.SEGUNDA, LocalTime.of(8,0), 60, 10, true);
+        turma.setId(1);
+        turma.setProfessor(professor);
+
+        return turma;
     }
 
     @Test
@@ -77,7 +104,6 @@ class TurmaServiceTest {
                         turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
                 .thenReturn(false);
 
-        // Aceita qualquer Turma
         Mockito.when(turmaRepository.save(Mockito.any(Turma.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -103,7 +129,7 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve atualizar turma existente")
     void atualizarTurma() {
-        Turma existente = new Turma(DiaSemana.SEGUNDA, LocalTime.of(8,0), 60, 10, true);
+        Turma existente = criarTurmaComProfessor();
         existente.setId(1);
 
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(existente));
@@ -127,8 +153,7 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve inativar turma")
     void inativarTurma() {
-        Turma turma = new Turma(DiaSemana.SEGUNDA, LocalTime.of(8,0), 60, 10, true);
-        turma.setId(1);
+        Turma turma = criarTurmaComProfessor();
 
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
 
@@ -149,8 +174,7 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve cadastrar aluno em turma")
     void cadastrarAlunoEmTurma() {
-        Turma turma = new Turma(DiaSemana.SEGUNDA, LocalTime.of(8,0), 60, 10, true);
-        turma.setId(1);
+        Turma turma = criarTurmaComProfessor();
 
         Aluno aluno = new Aluno();
         aluno.setId(1);
@@ -161,6 +185,12 @@ class TurmaServiceTest {
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
         Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(false);
+        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1))
+                .thenReturn(List.of(criarAlunoPlanoAtivo()));
+        Mockito.when(aulaRepository.existsAulaByDataAulaAndTurma_Id(Mockito.any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(false);
+        Mockito.when(aulaService.criarAula(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(LocalDate.class), Mockito.any(Aluno.class)))
+                .thenReturn(new Aula());
 
         Turma resultado = service.cadastrarAlunoEmUmaTurma(1, alunoRequest);
 
@@ -182,8 +212,7 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve lançar RuntimeException se aluno já está cadastrado")
     void cadastrarAlunoJaCadastrado() {
-        Turma turma = new Turma(DiaSemana.SEGUNDA, LocalTime.of(8,0), 60, 10, true);
-        turma.setId(1);
+        Turma turma = criarTurmaComProfessor();
 
         Aluno aluno = new Aluno();
         aluno.setId(1);
@@ -194,6 +223,8 @@ class TurmaServiceTest {
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
         Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(true);
+        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1))
+                .thenReturn(List.of(criarAlunoPlanoAtivo())); // garante plano ativo
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.cadastrarAlunoEmUmaTurma(1, alunoRequest));
