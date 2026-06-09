@@ -7,12 +7,12 @@ import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.exceptions.*;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
 import com.pilates.thais.almeida.repository.*;
+import com.pilates.thais.almeida.strategy.CalculoVagasTurmaStrategy;
+import com.pilates.thais.almeida.strategy.GeracaoDatasAulaStrategy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class TurmaService {
@@ -24,8 +24,10 @@ public class TurmaService {
 
     private final AulaService aulaService;
     private final ProfessorRepository professorRepository;
+    private final GeracaoDatasAulaStrategy geracaoDatasAulaStrategy;
+    private final CalculoVagasTurmaStrategy calculoVagasTurmaStrategy;
 
-    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository) {
+    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository, GeracaoDatasAulaStrategy geracaoDatasAulaStrategy, CalculoVagasTurmaStrategy calculoVagasTurmaStrategy) {
         this.turmaRepository = turmaRepository;
         this.alunoRepository = alunoRepository;
         this.alunoTurmaRepository = alunoTurmaRepository;
@@ -33,6 +35,8 @@ public class TurmaService {
         this.aulaRepository = aulaRepository;
         this.aulaService = aulaService;
         this.professorRepository = professorRepository;
+        this.geracaoDatasAulaStrategy = geracaoDatasAulaStrategy;
+        this.calculoVagasTurmaStrategy = calculoVagasTurmaStrategy;
     }
 
 
@@ -122,36 +126,13 @@ public class TurmaService {
 
         alunoTurmaRepository.save(alunoTurma);
 
-        // verificando se aulas ja existem - caso nao, cria aulas
-        LocalDate hoje = LocalDate.now();
-
-        String diaSemanaTurma = String.valueOf(turma.getDiaSemana());
-
-        LocalDate diaTurma = hoje.plusDays(1);
-
-        while(true){
-            if(obterDiaSemana(diaTurma).equals(diaSemanaTurma)){
-                break;
-            }
-            diaTurma = diaTurma.plusDays(1);
-        }
-
-        while(true){
-            if(!diaTurma.isAfter(alunoPlanos.getFirst().getDataFim())){
-                if(!aulaRepository.existsAulaByDataAulaAndTurma_Id(diaTurma, turma.getId())){
-                    aulaService.criarAula(turma.getId(), turma.getProfessor().getId(), diaTurma, aluno);
-                }
-                diaTurma = diaTurma.plusDays(7);
-            }else{
-                break;
+        for(LocalDate diaTurma : geracaoDatasAulaStrategy.gerarDatas(turma, alunoPlanos.getFirst(), LocalDate.now())){
+            if(!aulaRepository.existsAulaByDataAulaAndTurma_Id(diaTurma, turma.getId())){
+                aulaService.criarAula(turma.getId(), turma.getProfessor().getId(), diaTurma, aluno);
             }
         }
 
         return turma;
-    }
-
-    private String obterDiaSemana(LocalDate data){
-        return data.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("pt", "BR")).split("-")[0].toUpperCase();
     }
 
     public Turma excluirAlunoDaTurma(Integer id, Integer alunoId) {
@@ -165,7 +146,7 @@ public class TurmaService {
     public Integer vagasDisponiveis(Integer id) {
         Integer ocupadas= alunoTurmaRepository.countByTurmaIdAndAtivoTrue(id);
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada(""));
-        return turma.getCapacidadeMax()-ocupadas;
+        return calculoVagasTurmaStrategy.calcular(turma, ocupadas);
 
     }
 

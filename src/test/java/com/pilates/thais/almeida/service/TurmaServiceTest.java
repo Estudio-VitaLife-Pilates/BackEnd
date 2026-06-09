@@ -3,15 +3,22 @@ package com.pilates.thais.almeida.service;
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.entity.Aluno;
+import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.AlunoTurma;
+import com.pilates.thais.almeida.entity.Plano;
 import com.pilates.thais.almeida.entity.Turma;
 import com.pilates.thais.almeida.entity.Turma.DiaSemana;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
+import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
 import com.pilates.thais.almeida.repository.AlunoTurmaRepository;
+import com.pilates.thais.almeida.repository.AulaRepository;
+import com.pilates.thais.almeida.repository.ProfessorRepository;
 import com.pilates.thais.almeida.repository.TurmaRepository;
+import com.pilates.thais.almeida.strategy.CalculoVagasTurmaStrategy;
+import com.pilates.thais.almeida.strategy.GeracaoDatasAulaStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +46,24 @@ class TurmaServiceTest {
 
     @Mock
     private AlunoTurmaRepository alunoTurmaRepository;
+
+    @Mock
+    private AlunoPlanoRepository alunoPlanoRepository;
+
+    @Mock
+    private AulaRepository aulaRepository;
+
+    @Mock
+    private AulaService aulaService;
+
+    @Mock
+    private ProfessorRepository professorRepository;
+
+    @Mock
+    private GeracaoDatasAulaStrategy geracaoDatasAulaStrategy;
+
+    @Mock
+    private CalculoVagasTurmaStrategy calculoVagasTurmaStrategy;
 
     @InjectMocks
     private TurmaService service;
@@ -160,12 +185,16 @@ class TurmaServiceTest {
 
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(criarAlunoPlanoAtivo(aluno)));
         Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(false);
+        Mockito.when(geracaoDatasAulaStrategy.gerarDatas(Mockito.eq(turma), Mockito.any(AlunoPlano.class), Mockito.any(LocalDate.class)))
+                .thenReturn(List.of());
 
         Turma resultado = service.cadastrarAlunoEmUmaTurma(1, alunoRequest);
 
         assertEquals(turma, resultado);
         Mockito.verify(alunoTurmaRepository).save(Mockito.any(AlunoTurma.class));
+        Mockito.verify(geracaoDatasAulaStrategy).gerarDatas(Mockito.eq(turma), Mockito.any(AlunoPlano.class), Mockito.any(LocalDate.class));
     }
 
     @Test
@@ -193,11 +222,25 @@ class TurmaServiceTest {
 
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(criarAlunoPlanoAtivo(aluno)));
         Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.cadastrarAlunoEmUmaTurma(1, alunoRequest));
 
         assertEquals("Aluno já cadastrado nessa turma", ex.getMessage());
+    }
+
+    private AlunoPlano criarAlunoPlanoAtivo(Aluno aluno) {
+        Plano plano = new Plano();
+        plano.setFrequenciaSemanal(2);
+
+        AlunoPlano alunoPlano = new AlunoPlano();
+        alunoPlano.setAluno(aluno);
+        alunoPlano.setPlano(plano);
+        alunoPlano.setAtivo(true);
+        alunoPlano.setDataFim(LocalDate.now());
+
+        return alunoPlano;
     }
 }

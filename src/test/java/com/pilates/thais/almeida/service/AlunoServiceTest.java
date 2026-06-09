@@ -9,6 +9,7 @@ import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
 import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
 import com.pilates.thais.almeida.repository.PlanoRepository;
+import com.pilates.thais.almeida.strategy.CalculoVigenciaPlanoStrategy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +34,9 @@ class AlunoServiceTest {
 
     @Mock
     private AlunoPlanoRepository alunoPlanoRepository;
+
+    @Mock
+    private CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy;
 
     @InjectMocks
     private AlunoService service;
@@ -216,6 +221,8 @@ class AlunoServiceTest {
         // When
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(planoRepository.findById(1)).thenReturn(Optional.of(plano));
+        Mockito.when(calculoVigenciaPlanoStrategy.calcularDataFim(Mockito.any(LocalDate.class), Mockito.eq(plano)))
+                .thenReturn(LocalDate.now().plusDays(30));
 
         Aluno resultado = service.associarPlano(1, 1);
 
@@ -226,6 +233,8 @@ class AlunoServiceTest {
         Mockito.verify(alunoRepository, Mockito.times(2)).findById(1);
         Mockito.verify(planoRepository, Mockito.times(1)).findById(1);
         Mockito.verify(alunoPlanoRepository, Mockito.times(1)).save(Mockito.any(AlunoPlano.class));
+        Mockito.verify(calculoVigenciaPlanoStrategy, Mockito.times(1))
+                .calcularDataFim(Mockito.any(LocalDate.class), Mockito.eq(plano));
     }
 
     @Test

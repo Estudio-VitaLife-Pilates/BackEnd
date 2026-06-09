@@ -9,6 +9,7 @@ import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
 import com.pilates.thais.almeida.repository.PlanoRepository;
 import org.springframework.stereotype.Service;
+import com.pilates.thais.almeida.strategy.CalculoVigenciaPlanoStrategy;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,11 +21,13 @@ public class AlunoService {
     private final AlunoRepository alunoRepository;
     private final PlanoRepository planoRepository;
     private final AlunoPlanoRepository alunoPlanoRepository;
+    private final CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy;
 
-    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository, AlunoPlanoRepository alunoPlanoRepository) {
+    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository, AlunoPlanoRepository alunoPlanoRepository, CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy) {
         this.alunoRepository = alunoRepository;
         this.planoRepository = planoRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
+        this.calculoVigenciaPlanoStrategy = calculoVigenciaPlanoStrategy;
     }
 
     public List<Aluno> obterTodos(){
@@ -58,8 +61,10 @@ public class AlunoService {
 
         alunoPlano.setAluno(aluno);
         alunoPlano.setPlano(plano);
-        alunoPlano.setDataInicio(LocalDate.now());
-        alunoPlano.setDataFim(LocalDate.now().plusDays(plano.getValidadeDias()));
+        LocalDate dataInicio = LocalDate.now();
+
+        alunoPlano.setDataInicio(dataInicio);
+        alunoPlano.setDataFim(calculoVigenciaPlanoStrategy.calcularDataFim(dataInicio, plano));
         alunoPlano.setAtivo(true);
 
         alunoPlanoRepository.save(alunoPlano);
