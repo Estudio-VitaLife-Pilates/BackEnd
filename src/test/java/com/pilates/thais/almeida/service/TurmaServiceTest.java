@@ -6,6 +6,7 @@ import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.AlunoTurma;
 import com.pilates.thais.almeida.entity.Plano;
+import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.entity.Turma;
 import com.pilates.thais.almeida.entity.Turma.DiaSemana;
 import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
@@ -69,9 +70,6 @@ class TurmaServiceTest {
     private TurmaService service;
 
     private TurmaRequestDto turmaRequest;
-
-    @Mock
-    private AulaService aulaService;
 
     @BeforeEach
     void setup() {
@@ -246,9 +244,6 @@ class TurmaServiceTest {
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
         Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(criarAlunoPlanoAtivo(aluno)));
         Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(true);
-        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1))
-                .thenReturn(List.of(criarAlunoPlanoAtivo())); // garante plano ativo
-
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.cadastrarAlunoEmUmaTurma(1, alunoRequest));
 
