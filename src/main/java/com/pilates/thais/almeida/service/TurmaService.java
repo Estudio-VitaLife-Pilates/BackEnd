@@ -21,9 +21,9 @@ public class TurmaService {
     private final AlunoTurmaRepository alunoTurmaRepository;
     private final AlunoPlanoRepository alunoPlanoRepository;
     private final AulaRepository aulaRepository;
+    private final ProfessorRepository professorRepository;
 
     private final AulaService aulaService;
-    private final ProfessorRepository professorRepository;
     private final GeracaoDatasAulaStrategy geracaoDatasAulaStrategy;
     private final CalculoVagasTurmaStrategy calculoVagasTurmaStrategy;
 
@@ -33,8 +33,8 @@ public class TurmaService {
         this.alunoTurmaRepository = alunoTurmaRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
         this.aulaRepository = aulaRepository;
-        this.aulaService = aulaService;
         this.professorRepository = professorRepository;
+        this.aulaService = aulaService;
         this.geracaoDatasAulaStrategy = geracaoDatasAulaStrategy;
         this.calculoVagasTurmaStrategy = calculoVagasTurmaStrategy;
     }
@@ -60,17 +60,26 @@ public class TurmaService {
             );
         }
 
+        Professor professor = professorRepository.findById(requestDto.getProfessorId())
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
         Turma turma = TurmaMapper.toEntity(requestDto);
+        turma.setProfessor(professor);
 
         return turmaRepository.save(turma);
     }
 
     public Turma atualizar( TurmaRequestDto requestDto, Integer id) {
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
+
+        Professor professor = professorRepository.findById(requestDto.getProfessorId())
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
         turma.setAtiva(requestDto.getAtiva());
         turma.setCapacidadeMax(requestDto.getCapacidadeMax());
         turma.setDiaSemana(requestDto.getDiaSemana());
         turma.setDuracaoMinutos(requestDto.getDuracaoMinutos());
+        turma.setProfessor(professor);
         return turmaRepository.save(turma);
 
 
@@ -151,15 +160,15 @@ public class TurmaService {
     }
 
     public List<Turma> buscarPorDiaDaSemana(String diaSemana) {
-            List<Turma> turmas;
+        List<Turma> turmas;
 
-            if (diaSemana != null && !diaSemana.isBlank()) {
-                turmas = turmaRepository.findByDiaSemanaIgnoreCase(diaSemana);
-            } else {
-                turmas = turmaRepository.findAll();
-            }
+        if (diaSemana != null && !diaSemana.isBlank()) {
+            turmas = turmaRepository.findByDiaSemanaIgnoreCase(diaSemana);
+        } else {
+            turmas = turmaRepository.findAll();
+        }
 
-            return turmas;
+        return turmas;
     }
 
     public Turma trocarProfessor(
@@ -174,11 +183,6 @@ public class TurmaService {
 
         List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now(), idTurma);
 
-        // FORMA MENOS PERFORMATICA PQ VERIFIFICA TUDO DNV (se o prof existe, se a aula existe, etc, o que nao precisa nesse caso)
-//        for(Aula aula : aulasFuturas){
-//            aulaService.trocarProfessor(aula.getId(), idProfessor);
-//        }
-
         for(Aula aula: aulasFuturas){
             aula.setProfessor(professor);
             aulaRepository.save(aula);
@@ -187,5 +191,9 @@ public class TurmaService {
         turma.setProfessor(professor);
 
         return turmaRepository.save(turma);
+    }
+
+    public List<Turma> listarPorProfessor(Integer professorId) {
+        return turmaRepository.findByProfessor_Id(professorId);
     }
 }

@@ -15,8 +15,24 @@ public class TurmaResponseDto {
     private Integer duracaoMinutos;
     private Integer capacidadeMax;
     private Boolean ativa;
+    private Integer professorId;
+    private String professorNome;
 
+    public Integer getProfessorId() {
+        return professorId;
+    }
 
+    public void setProfessorId(Integer professorId) {
+        this.professorId = professorId;
+    }
+
+    public String getProfessorNome() {
+        return professorNome;
+    }
+
+    public void setProfessorNome(String professorNome) {
+        this.professorNome = professorNome;
+    }
 
     public enum DiaSemana {
         SEGUNDA,
@@ -28,14 +44,15 @@ public class TurmaResponseDto {
         DOMINGO
     }
 
-    public TurmaResponseDto(Integer id, Turma.DiaSemana diaSemana, LocalTime horaInicio, Integer duracaoMinutos, Boolean ativa, Integer capacidadeMax) {
+    public TurmaResponseDto(Integer id, Turma.DiaSemana diaSemana, LocalTime horaInicio, Integer duracaoMinutos, Integer capacidadeMax, Boolean ativa, Integer professorId, String professorNome) {
         this.id = id;
         this.diaSemana = diaSemana;
         this.horaInicio = horaInicio;
         this.duracaoMinutos = duracaoMinutos;
-        this.ativa = ativa;
         this.capacidadeMax = capacidadeMax;
-
+        this.ativa = ativa;
+        this.professorId = professorId;
+        this.professorNome = professorNome;
     }
 
     public TurmaResponseDto() {
