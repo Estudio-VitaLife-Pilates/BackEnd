@@ -43,6 +43,11 @@ public class TurmaController {
         return ResponseEntity.status(200).body(TurmaMapper.toResponse(turmaService.buscarPorId(id)));
     }
 
+    @Operation(summary = "Buscar turmas por professor", description = "Buscar turmas de um professor específico")
+    @GetMapping("/professor/{professorId}")
+    public ResponseEntity<List<TurmaResponseDto>> buscarPorProfessor(@PathVariable Integer professorId){
+        return ResponseEntity.status(200).body(TurmaMapper.toResponse(turmaService.listarPorProfessor(professorId)));
+    }
     @Operation(summary = "Cadastrar turma", description = "Cadastrar uma turma")
     @PostMapping
     public ResponseEntity<TurmaResponseDto> cadastrarTurma(@Valid @RequestBody TurmaRequestDto requestDto){

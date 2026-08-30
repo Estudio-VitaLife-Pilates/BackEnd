@@ -131,4 +131,17 @@ public class AulaService {
 
         return aulaRepository.save(aula);
     }
+    public Aula buscarProximaAulaDaTurma(Integer turmaId) {
+        return aulaRepository
+                .findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(turmaId, LocalDate.now())
+                .orElse(null);
+    }
+
+    public List<AulaAluno> listarAlunosDaAula(Integer aulaId) {
+        return aulaAlunoRepository.findByAula_Id(aulaId);
+    }
+
+    public void removerAlunoDaAula(Integer aulaAlunoId) {
+        aulaAlunoRepository.deleteById(aulaAlunoId);
+    }
 }

@@ -1,8 +1,10 @@
 package com.pilates.thais.almeida.controller;
 
+import com.pilates.thais.almeida.dto.aula.AulaAlunoDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aula.AulaDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aula.AulaRequestDto;
 import com.pilates.thais.almeida.dto.aula.AulaResponseDto;
+import com.pilates.thais.almeida.entity.Aula;
 import com.pilates.thais.almeida.mapper.AulaMapper;
 import com.pilates.thais.almeida.service.AulaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -104,5 +106,23 @@ public class AulaController {
     ) {
         AulaDetailsResponseDto aula = AulaMapper.toResponseDetails(aulaService.trocarProfessor(idAula, idProfessor));
         return ResponseEntity.status(200).body(aula);
+    }
+    @Operation(summary = "Buscar alunos da proxima aula da turma", description = "Lista os alunos (matriculados e em reposicao) da proxima aula agendada de uma turma")
+    @GetMapping("/turma/{turmaId}/proxima")
+    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> buscarAlunosProximaAulaDaTurma(@PathVariable Integer turmaId) {
+        Aula proximaAula = aulaService.buscarProximaAulaDaTurma(turmaId);
+
+        if (proximaAula == null) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAlunosDaAula(proximaAula.getId())));
+    }
+
+    @Operation(summary = "Remover aluno de uma aula", description = "Remove um aluno de uma aula especifica (cancela presenca ou reposicao)")
+    @DeleteMapping("/alunos/{aulaAlunoId}")
+    public ResponseEntity<Void> removerAlunoDaAula(@PathVariable Integer aulaAlunoId) {
+        aulaService.removerAlunoDaAula(aulaAlunoId);
+        return ResponseEntity.status(204).build();
     }
 }

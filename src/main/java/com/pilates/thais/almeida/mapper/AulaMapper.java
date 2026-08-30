@@ -1,5 +1,6 @@
 package com.pilates.thais.almeida.mapper;
 
+import com.pilates.thais.almeida.dto.aula.AulaAlunoDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aula.AulaDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aula.AulaRequestDto;
 import com.pilates.thais.almeida.dto.aula.AulaResponseDto;
@@ -66,5 +67,27 @@ public class AulaMapper {
         dto.setMarcada(entity.getMarcada());
 
         return dto;
+    }
+    public static AulaAlunoDetailsResponseDto toAlunoDetails(com.pilates.thais.almeida.entity.AulaAluno aulaAluno) {
+        AulaAlunoDetailsResponseDto dto = new AulaAlunoDetailsResponseDto();
+        dto.setId(aulaAluno.getId());
+        dto.setAlunoId(aulaAluno.getAluno().getId());
+        dto.setAlunoNome(aulaAluno.getAluno().getNome());
+        dto.setAlunoTelefone(aulaAluno.getAluno().getTelefone());
+        dto.setStatus(aulaAluno.getStatus());
+        dto.setAulaId(aulaAluno.getAula().getId());
+        dto.setDataAula(aulaAluno.getAula().getDataAula());
+
+        Integer origemId = aulaAluno.getAulaOrigem() != null ? aulaAluno.getAulaOrigem().getId() : null;
+        dto.setAulaOrigemId(origemId);
+        dto.setReposicao(origemId != null && !origemId.equals(aulaAluno.getAula().getId()));
+
+        return dto;
+    }
+
+
+
+    public static List<AulaAlunoDetailsResponseDto> toAlunoDetails(List<com.pilates.thais.almeida.entity.AulaAluno> lista) {
+        return lista.stream().map(AulaMapper::toAlunoDetails).toList();
     }
 }
