@@ -1,6 +1,6 @@
 package com.pilates.thais.almeida.dto.dashboard;
 
-public class DashboardAlertaResponseDto {
+public class    DashboardAlertaResponseDto {
     private Long alunosParaReagendamento;
     private Long aulasCanceladasMes;
     private Long aulasRemarcadasMes;
