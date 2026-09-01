@@ -1,4 +1,3 @@
-AulaAlunoRepository.java:
 package com.pilates.thais.almeida.repository;
 
 import com.pilates.thais.almeida.entity.AulaAluno;
