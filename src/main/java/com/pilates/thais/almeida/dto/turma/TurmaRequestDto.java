@@ -13,6 +13,8 @@ public class TurmaRequestDto {
     private Integer duracaoMinutos;
     private Integer capacidadeMax;
     private Boolean ativa;
+    private Integer professorId;
+
 
 
 
@@ -28,6 +30,14 @@ public class TurmaRequestDto {
 
     public Turma.DiaSemana getDiaSemana() {
         return diaSemana;
+    }
+
+    public Integer getProfessorId() {
+        return professorId;
+    }
+
+    public void setProfessorId(Integer professorId) {
+        this.professorId = professorId;
     }
 
     public void setDiaSemana(Turma.DiaSemana diaSemana) {
