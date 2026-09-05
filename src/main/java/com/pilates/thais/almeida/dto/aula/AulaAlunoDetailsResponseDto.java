@@ -18,6 +18,24 @@ public class AulaAlunoDetailsResponseDto {
     private String alunoTelefone;
     private Integer aulaId;
     private Boolean reposicao;
+    private String turmaDiaSemana;
+    private java.time.LocalTime turmaHoraInicio;
+
+    public String getTurmaDiaSemana() {
+        return turmaDiaSemana;
+    }
+
+    public void setTurmaDiaSemana(String turmaDiaSemana) {
+        this.turmaDiaSemana = turmaDiaSemana;
+    }
+
+    public java.time.LocalTime getTurmaHoraInicio() {
+        return turmaHoraInicio;
+    }
+
+    public void setTurmaHoraInicio(java.time.LocalTime turmaHoraInicio) {
+        this.turmaHoraInicio = turmaHoraInicio;
+    }
 
     public String getAlunoNome() {
         return alunoNome;
