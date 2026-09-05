@@ -125,4 +125,36 @@ public class AulaController {
         aulaService.removerAlunoDaAula(aulaAlunoId);
         return ResponseEntity.status(204).build();
     }
+    @Operation(summary = "Listar aulas de um aluno", description = "Lista o historico de aulas (agendadas, canceladas, reposicoes) de um aluno")
+    @GetMapping("/aluno/{alunoId}")
+    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(@PathVariable Integer alunoId) {
+        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAulasDoAluno(alunoId)));
+    }
+
+    @Operation(summary = "Cancelar aula de um aluno", description = "Marca uma aula agendada de um aluno como cancelada")
+    @PutMapping("/alunos/{aulaAlunoId}/cancelar")
+    public ResponseEntity<Void> cancelarAulaDoAluno(@PathVariable Integer aulaAlunoId) {
+        aulaService.cancelarAulaDoAluno(aulaAlunoId);
+        return ResponseEntity.status(204).build();
+    }
+
+    @Operation(summary = "Registrar reposicao", description = "Registra que um aluno vai repor uma aula perdida em outra aula")
+    @PostMapping("/{aulaId}/reposicao")
+    public ResponseEntity<AulaAlunoDetailsResponseDto> registrarReposicao(
+            @PathVariable Integer aulaId,
+            @RequestBody AulaRequestDto.ReposicaoRequestDto request
+    ) {
+        var aulaAluno = aulaService.registrarReposicao(aulaId, request.getAulaOrigemId(), request.getAlunoId());
+        return ResponseEntity.status(201).body(AulaMapper.toAlunoDetails(aulaAluno));
+    }
+
+    @Operation(summary = "Buscar proxima aula de uma turma", description = "Retorna id e data da proxima aula agendada de uma turma, usado para escolher o destino de uma reposicao")
+    @GetMapping("/turma/{turmaId}/proxima/info")
+    public ResponseEntity<AulaResponseDto> buscarProximaAulaInfo(@PathVariable Integer turmaId) {
+        var aula = aulaService.buscarProximaAulaDaTurma(turmaId);
+        if (aula == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(AulaMapper.toResponse(aula));
+    }
 }

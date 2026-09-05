@@ -24,6 +24,27 @@ public class AulaRequestDto {
         this.marcada = marcada;
     }
 
+    public static class ReposicaoRequestDto {
+        private Integer alunoId;
+        private Integer aulaOrigemId;
+
+        public Integer getAlunoId() {
+            return alunoId;
+        }
+
+        public void setAlunoId(Integer alunoId) {
+            this.alunoId = alunoId;
+        }
+
+        public Integer getAulaOrigemId() {
+            return aulaOrigemId;
+        }
+
+        public void setAulaOrigemId(Integer aulaOrigemId) {
+            this.aulaOrigemId = aulaOrigemId;
+        }
+    }
+
     public AulaRequestDto() {
     }
 

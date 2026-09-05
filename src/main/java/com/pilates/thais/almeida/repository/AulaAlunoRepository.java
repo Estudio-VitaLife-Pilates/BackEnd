@@ -14,8 +14,10 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
 
     List<AulaAluno> findByAula_Id(Integer aulaId);
 
+    List<AulaAluno> findByAluno_IdOrderByAula_DataAulaDesc(Integer alunoId);
+
     @Query("SELECT COUNT(aa) FROM AulaAluno aa WHERE aa.status = 'AUSENTE' " +
-           "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")
+            "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")
     long countAguardandoReagendamento();
 
     long countByStatusAndAula_DataAulaBetween(String status, LocalDate inicio, LocalDate fim);
