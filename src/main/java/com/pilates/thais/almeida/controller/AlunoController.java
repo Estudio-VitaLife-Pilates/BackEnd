@@ -27,13 +27,13 @@ public class AlunoController {
     @Operation(summary = "Buscar aluno", description = "Buscar todos os alunos do sistema")
     @GetMapping
     public ResponseEntity<List<AlunoResponseDto>> obterTodos(){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.obterTodos()));
+        return ResponseEntity.ok(AlunoMapper.toResponse(alunoService.obterTodos()));
     }
 
     @Operation(summary = "Buscar aluno", description = "Buscar todos os alunos do sistema com planos ATIVOS")
     @GetMapping("/details")
     public ResponseEntity<List<AlunoDetailsResponseDto>> obterTodosComPlanos(){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponseDetails(alunoService.obterTodos()));
+        return ResponseEntity.ok(AlunoMapper.toResponseDetails(alunoService.obterTodos()));
     }
 
     @Operation(summary = "Buscar aluno", description = "Buscar aluno por ID")
@@ -41,7 +41,7 @@ public class AlunoController {
     public ResponseEntity<AlunoResponseDto> obterPorId(
             @PathVariable Integer id
     ){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.obterPorId(id)));
+        return ResponseEntity.ok(AlunoMapper.toResponse(alunoService.obterPorId(id)));
     }
 
     @Operation(summary = "Buscar aluno", description = "Buscar alunos com planos ativos por ID")
@@ -49,7 +49,7 @@ public class AlunoController {
     public ResponseEntity<AlunoDetailsResponseDto> obterPorIdComPlanos(
             @PathVariable Integer id
     ){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponseDetails(alunoService.obterPorId(id)));
+        return ResponseEntity.ok(AlunoMapper.toResponseDetails(alunoService.obterPorId(id)));
     }
 
     @Operation(summary = "Buscar aluno", description = "Buscar aluno por nome")
@@ -57,7 +57,7 @@ public class AlunoController {
     public ResponseEntity<List<AlunoResponseDto>> buscarPorNome(
             @RequestParam String nome
     ){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.buscarPorNome(nome)));
+        return ResponseEntity.ok(AlunoMapper.toResponse(alunoService.buscarPorNome(nome)));
     }
 
     @Operation(summary = "Criar aluno", description = "Cria um novo aluno no sistema")
@@ -65,7 +65,7 @@ public class AlunoController {
     public ResponseEntity<AlunoResponseDto> criar(
             @Valid @RequestBody AlunoRequestDto request
     ){
-        return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(AlunoMapper.toResponse(alunoService.criar(AlunoMapper.toEntity(request))));
     }
 
     @Operation(summary = "Associar plano", description = "Associar um plano a um aluno")
@@ -74,7 +74,7 @@ public class AlunoController {
             @PathVariable Integer idAluno,
             @PathVariable Integer idPlano
     ){
-        return ResponseEntity.status(201).body(AlunoMapper.toResponse(alunoService.associarPlano(idAluno, idPlano)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(AlunoMapper.toResponse(alunoService.associarPlano(idAluno, idPlano)));
     }
 
     @Operation(summary = "Desativar plano", description = "Desativar plano de um aluno")
@@ -85,7 +85,7 @@ public class AlunoController {
             @PathVariable Integer idAlunoPlano
     ){
         alunoService.desativarPlano(idAluno, idPlano, idAlunoPlano);
-        return ResponseEntity.status(204).build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Reativar plano", description = "Reativar um plano de um aluno")
@@ -96,7 +96,7 @@ public class AlunoController {
             @PathVariable Integer idAlunoPlano
     ){
         alunoService.reativarPlano(idAluno, idPlano, idAlunoPlano);
-        return ResponseEntity.status(204).build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Buscar aluno", description = "Alterar dados do aluno")
@@ -105,7 +105,7 @@ public class AlunoController {
             @Valid @RequestBody AlunoRequestDto request,
             @PathVariable Integer id
     ){
-        return ResponseEntity.status(200).body(AlunoMapper.toResponse(alunoService.editar(AlunoMapper.toEntity(request), id)));
+        return ResponseEntity.ok(AlunoMapper.toResponse(alunoService.editar(AlunoMapper.toEntity(request), id)));
     }
 
     @Operation(summary = "Inativar aluno", description = "Inativar o aluno no sistema")
@@ -114,6 +114,6 @@ public class AlunoController {
             @PathVariable Integer id
     ){
         alunoService.inativarPorId(id);
-        return ResponseEntity.status(204).build();
+        return ResponseEntity.noContent().build();
     }
 }
