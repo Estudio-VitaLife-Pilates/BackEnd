@@ -122,6 +122,9 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve cadastrar uma turma")
     void cadastrarTurma() {
+        turmaRequest.setProfessorId(1);
+        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(new Professor()));
+
         Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemana(
                         turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
                 .thenReturn(false);
@@ -151,9 +154,11 @@ class TurmaServiceTest {
     @Test
     @DisplayName("Deve atualizar turma existente")
     void atualizarTurma() {
+        turmaRequest.setProfessorId(1);
         Turma existente = criarTurmaComProfessor();
         existente.setId(1);
 
+        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(new Professor()));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(existente));
         Mockito.when(turmaRepository.save(existente)).thenReturn(existente);
 

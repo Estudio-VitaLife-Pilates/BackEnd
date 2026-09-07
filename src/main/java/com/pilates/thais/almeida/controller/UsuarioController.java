@@ -39,7 +39,7 @@ public class UsuarioController {
     ){
         Usuario novoUsuario = UsuarioMapper.toEntity(usuarioCriacaoDto);
         usuarioService.criar(novoUsuario);
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
@@ -88,7 +88,7 @@ public class UsuarioController {
         List<UsuarioListarDto> usuariosEncontrados = this.usuarioService.listarTodos();
 
         if (usuariosEncontrados.isEmpty()) {
-            return ResponseEntity.status(204).build();
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(usuariosEncontrados);
     }
