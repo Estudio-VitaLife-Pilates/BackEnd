@@ -1,12 +1,10 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.*;
+import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.AulaNaoEncontrada;
 import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
-import com.pilates.thais.almeida.repository.AulaAlunoRepository;
-import com.pilates.thais.almeida.repository.AulaRepository;
-import com.pilates.thais.almeida.repository.TurmaRepository;
-import com.pilates.thais.almeida.repository.ProfessorRepository;
+import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,12 +18,14 @@ public class AulaService {
     private final TurmaRepository turmaRepository;
     private final ProfessorRepository professorRepository;
     private final AulaAlunoRepository aulaAlunoRepository;
+    private final AlunoRepository alunoRepository;
 
-    public AulaService(AulaRepository aulaRepository, TurmaRepository turmaRepository, ProfessorRepository professorRepository, AulaAlunoRepository aulaAlunoRepository) {
+    public AulaService(AulaRepository aulaRepository, TurmaRepository turmaRepository, ProfessorRepository professorRepository, AulaAlunoRepository aulaAlunoRepository, AlunoRepository alunoRepository) {
         this.aulaRepository = aulaRepository;
         this.turmaRepository = turmaRepository;
         this.professorRepository = professorRepository;
         this.aulaAlunoRepository = aulaAlunoRepository;
+        this.alunoRepository = alunoRepository;
     }
 
     public List<Aula> obterTodas() {
@@ -143,5 +143,32 @@ public class AulaService {
 
     public void removerAlunoDaAula(Integer aulaAlunoId) {
         aulaAlunoRepository.deleteById(aulaAlunoId);
+    }
+    public List<AulaAluno> listarAulasDoAluno(Integer alunoId) {
+        return aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaDesc(alunoId);
+    }
+
+    public void cancelarAulaDoAluno(Integer aulaAlunoId) {
+        AulaAluno aulaAluno = aulaAlunoRepository.findById(aulaAlunoId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Registro de aula não encontrado"));
+        aulaAluno.setStatus("CANCELADA");
+        aulaAlunoRepository.save(aulaAluno);
+    }
+
+    public AulaAluno registrarReposicao(Integer aulaDestinoId, Integer aulaOrigemId, Integer alunoId) {
+        Aula aulaDestino = aulaRepository.findById(aulaDestinoId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Aula de destino não encontrada"));
+        Aula aulaOrigem = aulaRepository.findById(aulaOrigemId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Aula de origem não encontrada"));
+        Aluno aluno = alunoRepository.findById(alunoId)
+                .orElseThrow(() -> new AlunoNaoEncontrado("Aluno não encontrado"));
+
+        AulaAluno aulaAluno = new AulaAluno();
+        aulaAluno.setAula(aulaDestino);
+        aulaAluno.setAluno(aluno);
+        aulaAluno.setAulaOrigem(aulaOrigem);
+        aulaAluno.setStatus("REPOSICAO");
+
+        return aulaAlunoRepository.save(aulaAluno);
     }
 }
