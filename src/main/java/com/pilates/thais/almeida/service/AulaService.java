@@ -7,7 +7,9 @@ import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
 import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,6 +84,7 @@ public class AulaService {
         return aulaSaved;
     }
 
+
     public Aula editarAula(Integer id, Aula aula) {
         Optional<Aula> aulaExistente = aulaRepository.findById(id);
 
@@ -97,6 +100,18 @@ public class AulaService {
 
     public void deletarAula(Integer id) {
         aulaRepository.deleteById(id);
+    }
+    public void vincularAlunoAAulaExistente(Aula aula, Aluno aluno) {
+        if (aulaAlunoRepository.existsByAula_IdAndAluno_Id(aula.getId(), aluno.getId())) {
+            return;
+        }
+
+        AulaAluno aulaAluno = new AulaAluno();
+        aulaAluno.setAula(aula);
+        aulaAluno.setAluno(aluno);
+        aulaAluno.setAulaOrigem(aula);
+
+        aulaAlunoRepository.save(aulaAluno);
     }
 
     public void desativarAula(Integer id) {
@@ -136,6 +151,46 @@ public class AulaService {
                 .findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(turmaId, LocalDate.now())
                 .orElse(null);
     }
+    public List<Aula> listarProximasAulasDaTurma(Integer turmaId) {
+        return aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now().minusDays(1), turmaId)
+                .stream()
+                .sorted(Comparator.comparing(Aula::getDataAula))
+                .toList();
+    }
+    public Aula buscarOuCriarProximaAulaDaTurma(Integer turmaId) {
+        Aula aulaExistente = buscarProximaAulaDaTurma(turmaId);
+        if (aulaExistente != null) {
+            return aulaExistente;
+        }
+
+        Turma turma = turmaRepository.findById(turmaId)
+                .orElseThrow(() -> new RuntimeException("Turma nao encontrada"));
+
+        LocalDate proximaData = proximaDataDaTurma(turma, LocalDate.now());
+
+        Aula novaAula = new Aula();
+        novaAula.setTurma(turma);
+        novaAula.setProfessor(turma.getProfessor());
+        novaAula.setDataAula(proximaData);
+        novaAula.setMarcada(true);
+
+        return aulaRepository.save(novaAula);
+    }
+
+    private LocalDate proximaDataDaTurma(Turma turma, LocalDate dataReferencia) {
+        DayOfWeek diaSemanaTurma = paraDayOfWeek(turma.getDiaSemana());
+        LocalDate dia = dataReferencia;
+
+        while (dia.getDayOfWeek() != diaSemanaTurma) {
+            dia = dia.plusDays(1);
+        }
+
+        return dia;
+    }
+
+    private DayOfWeek paraDayOfWeek(Turma.DiaSemana diaSemana) {
+        return DayOfWeek.of(diaSemana.ordinal() + 1);
+    }
 
     public List<AulaAluno> listarAlunosDaAula(Integer aulaId) {
         return aulaAlunoRepository.findByAula_Id(aulaId);
@@ -145,7 +200,13 @@ public class AulaService {
         aulaAlunoRepository.deleteById(aulaAlunoId);
     }
     public List<AulaAluno> listarAulasDoAluno(Integer alunoId) {
-        return aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaDesc(alunoId);
+        return aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(alunoId);
+    }
+    public Integer vagasDisponiveisNaAula(Integer aulaId) {
+        Aula aula = aulaRepository.findById(aulaId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Aula não encontrada"));
+        Integer ocupantes = aulaAlunoRepository.countOcupantesAtivosDaAula(aulaId);
+        return aula.getTurma().getCapacidadeMax() - ocupantes;
     }
 
     public void cancelarAulaDoAluno(Integer aulaAlunoId) {
@@ -162,6 +223,24 @@ public class AulaService {
                 .orElseThrow(() -> new AulaNaoEncontrada("Aula de origem não encontrada"));
         Aluno aluno = alunoRepository.findById(alunoId)
                 .orElseThrow(() -> new AlunoNaoEncontrado("Aluno não encontrado"));
+        Integer ocupantes = aulaAlunoRepository.countOcupantesAtivosDaAula(aulaDestinoId);
+        if (ocupantes >= aulaDestino.getTurma().getCapacidadeMax()) {
+            throw new RuntimeException("Turma de destino está sem vagas para essa data.");
+        }
+        boolean jaConfirmadoNaAulaDestino = aulaAlunoRepository
+                .findByAula_IdAndAluno_Id(aulaDestinoId, alunoId)
+                .filter(aa -> !"CANCELADA".equals(aa.getStatus()))
+                .isPresent();
+        if (jaConfirmadoNaAulaDestino) {
+            throw new RuntimeException("Aluno já está confirmado nessa aula.");
+        }
+
+
+        aulaAlunoRepository.findByAula_IdAndAluno_Id(aulaOrigemId, alunoId)
+                .ifPresent(aulaAlunoOrigem -> {
+                    aulaAlunoOrigem.setStatus("CANCELADA");
+                    aulaAlunoRepository.save(aulaAlunoOrigem);
+                });
 
         AulaAluno aulaAluno = new AulaAluno();
         aulaAluno.setAula(aulaDestino);

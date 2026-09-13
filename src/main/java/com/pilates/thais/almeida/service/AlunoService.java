@@ -1,13 +1,8 @@
 package com.pilates.thais.almeida.service;
 
-import com.pilates.thais.almeida.entity.Aluno;
-import com.pilates.thais.almeida.entity.AlunoPlano;
-import com.pilates.thais.almeida.entity.Plano;
-import com.pilates.thais.almeida.entity.Professor;
+import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.exceptions.*;
-import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
-import com.pilates.thais.almeida.repository.AlunoRepository;
-import com.pilates.thais.almeida.repository.PlanoRepository;
+import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
 import com.pilates.thais.almeida.strategy.CalculoVigenciaPlanoStrategy;
 
@@ -22,12 +17,20 @@ public class AlunoService {
     private final PlanoRepository planoRepository;
     private final AlunoPlanoRepository alunoPlanoRepository;
     private final CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy;
+    private final AlunoTurmaRepository alunoTurmaRepository;
+    private final AulaAlunoRepository aulaAlunoRepository;
 
-    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository, AlunoPlanoRepository alunoPlanoRepository, CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy) {
+    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository,
+                        AlunoPlanoRepository alunoPlanoRepository,
+                        CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy,
+                        AlunoTurmaRepository alunoTurmaRepository,
+                        AulaAlunoRepository aulaAlunoRepository) {
         this.alunoRepository = alunoRepository;
         this.planoRepository = planoRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
         this.calculoVigenciaPlanoStrategy = calculoVigenciaPlanoStrategy;
+        this.alunoTurmaRepository = alunoTurmaRepository;
+        this.aulaAlunoRepository = aulaAlunoRepository;
     }
 
     public List<Aluno> obterTodos(){
@@ -111,5 +114,22 @@ public class AlunoService {
                 (()->new AlunoNaoEncontrado("Aluno não encontrado"));
         aluno.setAtivo(false);
         alunoRepository.save(aluno);
+
+        List<AlunoTurma> matriculas = alunoTurmaRepository.findByAlunoIdAndAtivoTrue(id);
+        for (AlunoTurma matricula : matriculas) {
+            matricula.setAtivo(false);
+            alunoTurmaRepository.save(matricula);
+        }
+
+        List<AulaAluno> aulasDoAluno = aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(id);
+        for (AulaAluno aulaAluno : aulasDoAluno) {
+            boolean futuraOuHoje = !aulaAluno.getAula().getDataAula().isBefore(LocalDate.now());
+            boolean aindaAtiva = "AGENDADO".equals(aulaAluno.getStatus()) || "REPOSICAO".equals(aulaAluno.getStatus());
+
+            if (futuraOuHoje && aindaAtiva) {
+                aulaAluno.setStatus("CANCELADA");
+                aulaAlunoRepository.save(aulaAluno);
+            }
+        }
     }
 }

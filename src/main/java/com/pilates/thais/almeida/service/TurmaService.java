@@ -22,12 +22,12 @@ public class TurmaService {
     private final AlunoPlanoRepository alunoPlanoRepository;
     private final AulaRepository aulaRepository;
     private final ProfessorRepository professorRepository;
-
+    private final  AulaAlunoRepository aulaAlunoRepository;
     private final AulaService aulaService;
     private final GeracaoDatasAulaStrategy geracaoDatasAulaStrategy;
     private final CalculoVagasTurmaStrategy calculoVagasTurmaStrategy;
 
-    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository, GeracaoDatasAulaStrategy geracaoDatasAulaStrategy, CalculoVagasTurmaStrategy calculoVagasTurmaStrategy) {
+    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AulaAlunoRepository aulaAlunoRepository , AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository, AulaAlunoRepository aulaAlunoRepository1, GeracaoDatasAulaStrategy geracaoDatasAulaStrategy, CalculoVagasTurmaStrategy calculoVagasTurmaStrategy) {
         this.turmaRepository = turmaRepository;
         this.alunoRepository = alunoRepository;
         this.alunoTurmaRepository = alunoTurmaRepository;
@@ -35,13 +35,15 @@ public class TurmaService {
         this.aulaRepository = aulaRepository;
         this.professorRepository = professorRepository;
         this.aulaService = aulaService;
+        this.aulaAlunoRepository = aulaAlunoRepository1;
         this.geracaoDatasAulaStrategy = geracaoDatasAulaStrategy;
         this.calculoVagasTurmaStrategy = calculoVagasTurmaStrategy;
+
     }
 
 
     public List<Turma> listar() {
-        return turmaRepository.findTurmasByAtivaTrue();
+        return turmaRepository.findAll();
 
     }
 
@@ -126,6 +128,12 @@ public class TurmaService {
             throw new RuntimeException("Aluno já cadastrado nessa turma");
         }
 
+
+        Integer ocupadas = alunoTurmaRepository.countByTurmaIdAndAtivoTrue(turma.getId());
+        if (ocupadas >= turma.getCapacidadeMax()) {
+            throw new RuntimeException("Turma já está com a capacidade máxima de alunos.");
+        }
+
         AlunoTurma alunoTurma = new AlunoTurma();
 
         alunoTurma.setAluno(aluno);
@@ -138,6 +146,10 @@ public class TurmaService {
         for(LocalDate diaTurma : geracaoDatasAulaStrategy.gerarDatas(turma, alunoPlanos.getFirst(), LocalDate.now())){
             if(!aulaRepository.existsAulaByDataAulaAndTurma_Id(diaTurma, turma.getId())){
                 aulaService.criarAula(turma.getId(), turma.getProfessor().getId(), diaTurma, aluno);
+            } else {
+                Aula aulaExistente = aulaRepository.findByDataAulaAndTurma_Id(diaTurma, turma.getId())
+                        .orElseThrow(() -> new RuntimeException("Aula nao encontrada"));
+                aulaService.vincularAlunoAAulaExistente(aulaExistente, aluno);
             }
         }
 
@@ -145,11 +157,23 @@ public class TurmaService {
     }
 
     public Turma excluirAlunoDaTurma(Integer id, Integer alunoId) {
-        AlunoTurma alunoTurma= alunoTurmaRepository.findByAlunoIdAndTurmaId(alunoId,id);
+        AlunoTurma alunoTurma = alunoTurmaRepository.findByAlunoIdAndTurmaId(alunoId, id);
+        if (alunoTurma == null) {
+            throw new RuntimeException("Aluno não está matriculado nessa turma");
+        }
+
+        List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now(), id);
+        for (Aula aula : aulasFuturas) {
+            aulaAlunoRepository.findByAula_IdAndAluno_Id(aula.getId(), alunoId)
+                    .ifPresent(aulaAluno -> {
+                        aulaAluno.setStatus("CANCELADA");
+                        aulaAlunoRepository.save(aulaAluno);
+                    });
+        }
+
+        Turma turma = alunoTurma.getTurma();
         alunoTurmaRepository.removeById(alunoTurma.getId());
-        return alunoTurma.getTurma();
-
-
+        return turma;
     }
 
     public Integer vagasDisponiveis(Integer id) {

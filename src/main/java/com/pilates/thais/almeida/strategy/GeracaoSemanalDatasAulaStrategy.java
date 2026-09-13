@@ -4,11 +4,10 @@ import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.Turma;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Component
 public class GeracaoSemanalDatasAulaStrategy implements GeracaoDatasAulaStrategy {
@@ -18,7 +17,7 @@ public class GeracaoSemanalDatasAulaStrategy implements GeracaoDatasAulaStrategy
         List<LocalDate> datas = new ArrayList<>();
         LocalDate diaTurma = proximaDataDaTurma(turma, dataReferencia);
 
-        while(!diaTurma.isAfter(alunoPlano.getDataFim())){
+        while (!diaTurma.isAfter(alunoPlano.getDataFim())) {
             datas.add(diaTurma);
             diaTurma = diaTurma.plusDays(7);
         }
@@ -27,17 +26,17 @@ public class GeracaoSemanalDatasAulaStrategy implements GeracaoDatasAulaStrategy
     }
 
     private LocalDate proximaDataDaTurma(Turma turma, LocalDate dataReferencia) {
-        String diaSemanaTurma = String.valueOf(turma.getDiaSemana());
+        DayOfWeek diaSemanaTurma = paraDayOfWeek(turma.getDiaSemana());
         LocalDate diaTurma = dataReferencia.plusDays(1);
 
-        while(!obterDiaSemana(diaTurma).equals(diaSemanaTurma)){
+        while (diaTurma.getDayOfWeek() != diaSemanaTurma) {
             diaTurma = diaTurma.plusDays(1);
         }
 
         return diaTurma;
     }
 
-    private String obterDiaSemana(LocalDate data){
-        return data.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("pt", "BR")).split("-")[0].toUpperCase();
+    private DayOfWeek paraDayOfWeek(Turma.DiaSemana diaSemana) {
+        return DayOfWeek.of(diaSemana.ordinal() + 1);
     }
 }
