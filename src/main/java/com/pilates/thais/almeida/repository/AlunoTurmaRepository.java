@@ -25,4 +25,6 @@ public interface AlunoTurmaRepository extends JpaRepository<AlunoTurma,Integer> 
 
     @Query("SELECT at.turma.id, COUNT(at) FROM AlunoTurma at WHERE at.ativo = true GROUP BY at.turma.id")
     List<Object[]> countMatriculadosPorTurma();
+
+    List<AlunoTurma> findByAlunoIdAndAtivoTrue(Integer id);
 }

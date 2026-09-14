@@ -81,7 +81,10 @@ public class AulaMapper {
         Integer origemId = aulaAluno.getAulaOrigem() != null ? aulaAluno.getAulaOrigem().getId() : null;
         dto.setAulaOrigemId(origemId);
         dto.setReposicao(origemId != null && !origemId.equals(aulaAluno.getAula().getId()));
-
+        if (aulaAluno.getAula().getTurma() != null) {
+            dto.setTurmaDiaSemana(aulaAluno.getAula().getTurma().getDiaSemana().toString());
+            dto.setTurmaHoraInicio(aulaAluno.getAula().getTurma().getHoraInicio());
+        }
         return dto;
     }
 

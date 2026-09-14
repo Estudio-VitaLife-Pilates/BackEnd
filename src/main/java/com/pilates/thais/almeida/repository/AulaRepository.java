@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface AulaRepository extends JpaRepository<Aula, Integer> {
     List<Aula> findAllByDataAula(LocalDate dataAula);
+    Optional<Aula> findByDataAulaAndTurma_Id(LocalDate dataAula, Integer turmaId);
 
     boolean existsAulaByDataAulaAndTurma_Id(LocalDate dataAula, Integer turmaId);
 

@@ -125,4 +125,49 @@ public class AulaController {
         aulaService.removerAlunoDaAula(aulaAlunoId);
         return ResponseEntity.status(204).build();
     }
+    @Operation(summary = "Listar aulas de um aluno", description = "Lista o historico de aulas (agendadas, canceladas, reposicoes) de um aluno")
+    @GetMapping("/aluno/{alunoId}")
+    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(@PathVariable Integer alunoId) {
+        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAulasDoAluno(alunoId)));
+    }
+    @Operation(summary = "Listar alunos de uma aula", description = "Lista os alunos (matriculados e em reposição) de uma aula específica")
+    @GetMapping("/{aulaId}/alunos")
+    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAlunosDaAula(@PathVariable Integer aulaId) {
+        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAlunosDaAula(aulaId)));
+    }
+    @Operation(summary = "Vagas de uma aula", description = "Retorna as vagas disponíveis numa aula específica, considerando matriculados e reposições")
+    @GetMapping("/{aulaId}/vagas")
+    public ResponseEntity<Integer> vagasDisponiveisNaAula(@PathVariable Integer aulaId) {
+        return ResponseEntity.ok(aulaService.vagasDisponiveisNaAula(aulaId));
+    }
+    @Operation(summary = "Buscar próximas aulas da turma", description = "Lista todas as próximas ocorrências já geradas para uma turma")
+    @GetMapping("/turma/{turmaId}/proximas")
+    public ResponseEntity<List<AulaResponseDto>> buscarProximasAulasDaTurma(@PathVariable Integer turmaId) {
+        List<AulaResponseDto> aulas = AulaMapper.toResponse(aulaService.listarProximasAulasDaTurma(turmaId));
+        return ResponseEntity.ok(aulas);
+    }
+
+    @Operation(summary = "Cancelar aula de um aluno", description = "Marca uma aula agendada de um aluno como cancelada")
+    @PutMapping("/alunos/{aulaAlunoId}/cancelar")
+    public ResponseEntity<Void> cancelarAulaDoAluno(@PathVariable Integer aulaAlunoId) {
+        aulaService.cancelarAulaDoAluno(aulaAlunoId);
+        return ResponseEntity.status(204).build();
+    }
+
+    @Operation(summary = "Registrar reposicao", description = "Registra que um aluno vai repor uma aula perdida em outra aula")
+    @PostMapping("/{aulaId}/reposicao")
+    public ResponseEntity<AulaAlunoDetailsResponseDto> registrarReposicao(
+            @PathVariable Integer aulaId,
+            @RequestBody AulaRequestDto.ReposicaoRequestDto request
+    ) {
+        var aulaAluno = aulaService.registrarReposicao(aulaId, request.getAulaOrigemId(), request.getAlunoId());
+        return ResponseEntity.status(201).body(AulaMapper.toAlunoDetails(aulaAluno));
+    }
+
+    @Operation(summary = "Buscar proxima aula de uma turma", description = "Retorna id e data da proxima aula de uma turma, se não existir cria")
+    @GetMapping("/turma/{turmaId}/proxima/info")
+    public ResponseEntity<AulaResponseDto> buscarProximaAulaInfo(@PathVariable Integer turmaId) {
+        var aula = aulaService.buscarOuCriarProximaAulaDaTurma(turmaId);
+        return ResponseEntity.ok(AulaMapper.toResponse(aula));
+    }
 }

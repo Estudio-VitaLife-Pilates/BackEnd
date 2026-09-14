@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -80,6 +81,16 @@ public class UsuarioController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    @SecurityRequirement(name = "Bearer")
+    public ResponseEntity<UsuarioListarDto> meuPerfil(@AuthenticationPrincipal UsuarioDetalhesDto usuarioLogado) {
+        UsuarioListarDto perfil = new UsuarioListarDto();
+        perfil.setId(usuarioLogado.getId());
+        perfil.setNome(usuarioLogado.getNome());
+        perfil.setEmail(usuarioLogado.getUsername());
+        return ResponseEntity.ok(perfil);
     }
 
     @GetMapping
