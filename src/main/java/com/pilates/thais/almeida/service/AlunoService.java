@@ -121,6 +121,12 @@ public class AlunoService {
             alunoTurmaRepository.save(matricula);
         }
 
+        List<AlunoPlano> planos = alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(id);
+        for (AlunoPlano alunoPlano : planos) {
+            alunoPlano.setAtivo(false);
+            alunoPlanoRepository.save(alunoPlano);
+        }
+
         List<AulaAluno> aulasDoAluno = aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(id);
         for (AulaAluno aulaAluno : aulasDoAluno) {
             boolean futuraOuHoje = !aulaAluno.getAula().getDataAula().isBefore(LocalDate.now());
@@ -131,5 +137,12 @@ public class AlunoService {
                 aulaAlunoRepository.save(aulaAluno);
             }
         }
+    }
+
+    public void reativarPorId(Integer id) {
+        Aluno aluno = alunoRepository.findById(id)
+                .orElseThrow(() -> new AlunoNaoEncontrado("Aluno não encontrado"));
+        aluno.setAtivo(true);
+        alunoRepository.save(aluno);
     }
 }

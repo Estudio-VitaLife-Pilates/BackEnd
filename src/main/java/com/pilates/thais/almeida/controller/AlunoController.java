@@ -116,4 +116,13 @@ public class AlunoController {
         alunoService.inativarPorId(id);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Reativar aluno", description = "Reativar um aluno previamente inativado")
+    @PatchMapping("/{id}/reativar")
+    public ResponseEntity<Void> reativarAluno(
+            @PathVariable Integer id
+    ){
+        alunoService.reativarPorId(id);
+        return ResponseEntity.noContent().build();
+    }
 }
