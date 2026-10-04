@@ -10,6 +10,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class AlunoService {
 
@@ -108,6 +111,7 @@ public class AlunoService {
     public void deletarPorId(Integer id){
         alunoRepository.deleteById(id);
     }
+
     public void inativarPorId(Integer id){
 
         Aluno aluno=alunoRepository.findById(id).orElseThrow
@@ -131,5 +135,9 @@ public class AlunoService {
                 aulaAlunoRepository.save(aulaAluno);
             }
         }
+    }
+
+    public Page<Aluno> obterTodosPaginado(Pageable pageable) {
+        return alunoRepository.findAll(pageable);
     }
 }
