@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
 @RestController
 @Tag(name = "Alunos", description = "Operações relacionadas a alunos")
 @RequestMapping("/alunos")
@@ -24,10 +28,16 @@ public class AlunoController {
         this.alunoService = alunoService;
     }
 
-    @Operation(summary = "Buscar aluno", description = "Buscar todos os alunos do sistema")
+    @Operation(summary = "Buscar alunos paginados", description = "Buscar alunos com paginação")
     @GetMapping
-    public ResponseEntity<List<AlunoResponseDto>> obterTodos(){
-        return ResponseEntity.ok(AlunoMapper.toResponse(alunoService.obterTodos()));
+    public ResponseEntity<Page<AlunoResponseDto>> obterTodos(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable
+    ) {
+        Page<AlunoResponseDto> alunos = alunoService
+                .obterTodosPaginado(pageable)
+                .map(AlunoMapper::toResponse);
+
+        return ResponseEntity.ok(alunos);
     }
 
     @Operation(summary = "Buscar aluno", description = "Buscar todos os alunos do sistema com planos ATIVOS")
