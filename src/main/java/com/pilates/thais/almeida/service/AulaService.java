@@ -216,6 +216,10 @@ public class AulaService {
     }
 
     public AulaAluno registrarReposicao(Integer aulaDestinoId, Integer aulaOrigemId, Integer alunoId) {
+        if (aulaDestinoId.equals(aulaOrigemId)) {
+            throw new RuntimeException("A aula de destino não pode ser a mesma que a aula de origem.");
+        }
+
         Aula aulaDestino = aulaRepository.findById(aulaDestinoId)
                 .orElseThrow(() -> new AulaNaoEncontrada("Aula de destino não encontrada"));
         Aula aulaOrigem = aulaRepository.findById(aulaOrigemId)
