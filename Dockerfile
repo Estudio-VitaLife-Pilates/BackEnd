@@ -12,6 +12,9 @@ COPY src src
 
 RUN ./mvnw clean package -DskipTests
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "target/thais.almeida-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
