@@ -1,4 +1,4 @@
-name: Deploy to Amazon ECS
+name: Deploy to Amazon ECR and EC2
 
 on:
   push:
@@ -64,11 +64,25 @@ jobs:
             exit 1
           fi
 
+          SSM_COMMAND=$(cat <<EOF
+          set -e
+          if [ ! -x /usr/local/bin/deploy-backend ] || [ ! -s /opt/infra-pilates/backend/compose.yml ]; then
+            command -v aws >/dev/null 2>&1 || { apt-get update && apt-get install -y awscli; }
+            aws s3 cp --region "$AWS_REGION" \
+              s3://infra-pilates-bronze/bootstrap/infra-pilates/app.sh \
+              /tmp/infra-pilates-app-bootstrap.sh
+            bash /tmp/infra-pilates-app-bootstrap.sh
+          fi
+          /usr/local/bin/deploy-backend "$IMAGE_TAG"
+          EOF
+          )
+
+          PARAMETERS=$(jq -n --arg command "$SSM_COMMAND" '{commands: [$command]}')
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name AWS-RunShellScript \
-            --comment "Deploy backend image $IMAGE_TAG" \
-            --parameters "commands=/usr/local/bin/deploy-backend $IMAGE_TAG" \
+            --comment "Bootstrap if needed and deploy backend image $IMAGE_TAG" \
+            --parameters "$PARAMETERS" \
             --query "Command.CommandId" \
             --output text)
 
