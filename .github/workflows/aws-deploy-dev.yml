@@ -71,6 +71,7 @@ jobs:
             aws s3 cp --region "$AWS_REGION" \
               s3://infra-pilates-bronze/bootstrap/infra-pilates/app.sh \
               /tmp/infra-pilates-app-bootstrap.sh
+            sed -i 's/\r$//' /tmp/infra-pilates-app-bootstrap.sh
             bash /tmp/infra-pilates-app-bootstrap.sh
           fi
           /usr/local/bin/deploy-backend "$IMAGE_TAG"
