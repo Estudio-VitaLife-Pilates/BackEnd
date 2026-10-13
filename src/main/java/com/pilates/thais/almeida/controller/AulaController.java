@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
 @RestController
 @Tag(name = "Aulas", description = "Gestão de aulas")
 @RequestMapping("/aulas")
@@ -125,11 +129,18 @@ public class AulaController {
         aulaService.removerAlunoDaAula(aulaAlunoId);
         return ResponseEntity.status(204).build();
     }
-    @Operation(summary = "Listar aulas de um aluno", description = "Lista o historico de aulas (agendadas, canceladas, reposicoes) de um aluno")
+
+    @Operation(summary = "Listar aulas de um aluno", description = "Lista o histórico de aulas de um aluno com paginação")
     @GetMapping("/aluno/{alunoId}")
-    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(@PathVariable Integer alunoId) {
-        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAulasDoAluno(alunoId)));
+    public ResponseEntity<Page<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(@PathVariable Integer alunoId, @PageableDefault(size = 10, sort = "aula.dataAula") Pageable pageable) {
+        Page<AulaAlunoDetailsResponseDto> aulas = aulaService.listarAulasDoAlunoPaginado(alunoId, pageable)
+                .map(aulaAluno ->
+                        AulaMapper.toAlunoDetails(List.of(aulaAluno)).get(0)
+                );
+
+        return ResponseEntity.ok(aulas);
     }
+    
     @Operation(summary = "Listar alunos de uma aula", description = "Lista os alunos (matriculados e em reposição) de uma aula específica")
     @GetMapping("/{aulaId}/alunos")
     public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAlunosDaAula(@PathVariable Integer aulaId) {
