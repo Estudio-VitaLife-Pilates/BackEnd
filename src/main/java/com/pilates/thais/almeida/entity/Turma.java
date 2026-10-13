@@ -7,18 +7,22 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Entity
-public class Turma {
+public class Turma extends Auditavel{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @Enumerated(EnumType.STRING)
-    private DiaSemana diaSemana ;
+    private DiaSemana diaSemana;
     private LocalTime horaInicio;
     private Integer duracaoMinutos;
     private Integer capacidadeMax;
     private Boolean ativa;
     @OneToMany(mappedBy = "turma")
     private List<AlunoTurma> alunos;
+
+    @ManyToOne
+    @JoinColumn(name = "professor_id")
+    private Professor professor;
 
     public List<AlunoTurma> getAlunos() {
         return alunos;
@@ -99,4 +103,11 @@ public class Turma {
         this.ativa = ativa;
     }
 
+    public Professor getProfessor() {
+        return professor;
+    }
+
+    public void setProfessor(Professor professor) {
+        this.professor = professor;
+    }
 }

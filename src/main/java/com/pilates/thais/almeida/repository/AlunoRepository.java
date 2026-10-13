@@ -12,4 +12,12 @@ import java.util.Optional;
 @Repository
 public interface AlunoRepository extends JpaRepository<Aluno, Integer> {
     List<Aluno> findAllByNomeContainingIgnoreCase(String nome);
+
+    boolean existsAlunoByEmail(String email);
+
+    long countByAtivoTrue();
+
+    long countByDataCadastroBetween(LocalDate inicio, LocalDate fim);
+
+    List<Aluno> findTop5ByOrderByDataCadastroDesc();
 }

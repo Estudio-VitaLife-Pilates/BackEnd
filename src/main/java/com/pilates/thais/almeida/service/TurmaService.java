@@ -3,16 +3,12 @@ package com.pilates.thais.almeida.service;
 import com.pilates.thais.almeida.dto.turma.TurmaAlunoRequest;
 import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.dto.turma.TurmaResponseDto;
-import com.pilates.thais.almeida.entity.Aluno;
-import com.pilates.thais.almeida.entity.AlunoTurma;
-import com.pilates.thais.almeida.entity.Turma;
-import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.TurmaNaoEncontrada;
+import com.pilates.thais.almeida.entity.*;
+import com.pilates.thais.almeida.exceptions.*;
 import com.pilates.thais.almeida.mapper.TurmaMapper;
-import com.pilates.thais.almeida.repository.AlunoRepository;
-import com.pilates.thais.almeida.repository.AlunoTurmaRepository;
-import com.pilates.thais.almeida.repository.ProfessorRepository;
-import com.pilates.thais.almeida.repository.TurmaRepository;
+import com.pilates.thais.almeida.repository.*;
+import com.pilates.thais.almeida.strategy.CalculoVagasTurmaStrategy;
+import com.pilates.thais.almeida.strategy.GeracaoDatasAulaStrategy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -23,16 +19,31 @@ public class TurmaService {
     private final TurmaRepository turmaRepository;
     private final AlunoRepository alunoRepository;
     private final AlunoTurmaRepository alunoTurmaRepository;
+    private final AlunoPlanoRepository alunoPlanoRepository;
+    private final AulaRepository aulaRepository;
+    private final ProfessorRepository professorRepository;
+    private final  AulaAlunoRepository aulaAlunoRepository;
+    private final AulaService aulaService;
+    private final GeracaoDatasAulaStrategy geracaoDatasAulaStrategy;
+    private final CalculoVagasTurmaStrategy calculoVagasTurmaStrategy;
 
-    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository) {
+    public TurmaService(TurmaRepository turmaRepository, AlunoRepository alunoRepository, AlunoTurmaRepository alunoTurmaRepository, AulaAlunoRepository aulaAlunoRepository , AlunoPlanoRepository alunoPlanoRepository, AulaRepository aulaRepository, AulaService aulaService, ProfessorRepository professorRepository, AulaAlunoRepository aulaAlunoRepository1, GeracaoDatasAulaStrategy geracaoDatasAulaStrategy, CalculoVagasTurmaStrategy calculoVagasTurmaStrategy) {
         this.turmaRepository = turmaRepository;
         this.alunoRepository = alunoRepository;
         this.alunoTurmaRepository = alunoTurmaRepository;
+        this.alunoPlanoRepository = alunoPlanoRepository;
+        this.aulaRepository = aulaRepository;
+        this.professorRepository = professorRepository;
+        this.aulaService = aulaService;
+        this.aulaAlunoRepository = aulaAlunoRepository1;
+        this.geracaoDatasAulaStrategy = geracaoDatasAulaStrategy;
+        this.calculoVagasTurmaStrategy = calculoVagasTurmaStrategy;
+
     }
 
 
     public List<Turma> listar() {
-        return turmaRepository.findTurmasByAtivaTrue();
+        return turmaRepository.findAll();
 
     }
 
@@ -47,21 +58,30 @@ public class TurmaService {
 
         if (turmaExiste) {
             throw new RuntimeException(
-                    "Professor já possui uma turma nesse horário."
+                    "Ja existe uma turma nesse horário."
             );
         }
 
+        Professor professor = professorRepository.findById(requestDto.getProfessorId())
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
         Turma turma = TurmaMapper.toEntity(requestDto);
+        turma.setProfessor(professor);
 
         return turmaRepository.save(turma);
     }
 
     public Turma atualizar( TurmaRequestDto requestDto, Integer id) {
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
+
+        Professor professor = professorRepository.findById(requestDto.getProfessorId())
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
         turma.setAtiva(requestDto.getAtiva());
         turma.setCapacidadeMax(requestDto.getCapacidadeMax());
         turma.setDiaSemana(requestDto.getDiaSemana());
         turma.setDuracaoMinutos(requestDto.getDuracaoMinutos());
+        turma.setProfessor(professor);
         return turmaRepository.save(turma);
 
 
@@ -83,18 +103,35 @@ public class TurmaService {
     }
 
     public Turma cadastrarAlunoEmUmaTurma(Integer id, TurmaAlunoRequest alunoId) {
-
         Aluno aluno = alunoRepository.findById(alunoId.getAlunoId())
                 .orElseThrow(() -> new AlunoNaoEncontrado("Aluno nao encontrado"));
 
         Turma turma = turmaRepository.findById(id)
                 .orElseThrow(() -> new TurmaNaoEncontrada("Turma nao encontrada"));
 
+        List<AlunoPlano> alunoPlanos = alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(aluno.getId());
+
+        if(alunoPlanos.isEmpty()){
+            throw new RuntimeException("Aluno sem plano ativo");
+        }
+
+        Integer frequenciaSemanal = alunoPlanos.getFirst().getPlano().getFrequenciaSemanal();
+
+        if(frequenciaSemanal < alunoTurmaRepository.countByAlunoId(aluno.getId())+1){
+            throw new UsuarioJaCadastradoNoMaximoDeTurmas("Usuário já cadastrado no máximo de turmas que o plano permite.");
+        }
+
         boolean alunoJaExiste = alunoTurmaRepository
                 .existsByAlunoIdAndTurmaId(aluno.getId(), turma.getId());
 
         if (alunoJaExiste) {
             throw new RuntimeException("Aluno já cadastrado nessa turma");
+        }
+
+
+        Integer ocupadas = alunoTurmaRepository.countByTurmaIdAndAtivoTrue(turma.getId());
+        if (ocupadas >= turma.getCapacidadeMax()) {
+            throw new RuntimeException("Turma já está com a capacidade máxima de alunos.");
         }
 
         AlunoTurma alunoTurma = new AlunoTurma();
@@ -106,37 +143,81 @@ public class TurmaService {
 
         alunoTurmaRepository.save(alunoTurma);
 
+        for(LocalDate diaTurma : geracaoDatasAulaStrategy.gerarDatas(turma, alunoPlanos.getFirst(), LocalDate.now())){
+            if(!aulaRepository.existsAulaByDataAulaAndTurma_Id(diaTurma, turma.getId())){
+                aulaService.criarAula(turma.getId(), turma.getProfessor().getId(), diaTurma, aluno);
+            } else {
+                Aula aulaExistente = aulaRepository.findByDataAulaAndTurma_Id(diaTurma, turma.getId())
+                        .orElseThrow(() -> new RuntimeException("Aula nao encontrada"));
+                aulaService.vincularAlunoAAulaExistente(aulaExistente, aluno);
+            }
+        }
+
         return turma;
     }
 
     public Turma excluirAlunoDaTurma(Integer id, Integer alunoId) {
-        AlunoTurma alunoTurma= alunoTurmaRepository.findByAlunoIdAndTurmaId(alunoId,id);
+        AlunoTurma alunoTurma = alunoTurmaRepository.findByAlunoIdAndTurmaId(alunoId, id);
+        if (alunoTurma == null) {
+            throw new RuntimeException("Aluno não está matriculado nessa turma");
+        }
+
+        List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now(), id);
+        for (Aula aula : aulasFuturas) {
+            aulaAlunoRepository.findByAula_IdAndAluno_Id(aula.getId(), alunoId)
+                    .ifPresent(aulaAluno -> {
+                        aulaAluno.setStatus("CANCELADA");
+                        aulaAlunoRepository.save(aulaAluno);
+                    });
+        }
+
+        Turma turma = alunoTurma.getTurma();
         alunoTurmaRepository.removeById(alunoTurma.getId());
-        return alunoTurma.getTurma();
-
-
+        return turma;
     }
 
     public Integer vagasDisponiveis(Integer id) {
         Integer ocupadas= alunoTurmaRepository.countByTurmaIdAndAtivoTrue(id);
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada(""));
-        return turma.getCapacidadeMax()-ocupadas;
+        return calculoVagasTurmaStrategy.calcular(turma, ocupadas);
 
     }
 
     public List<Turma> buscarPorDiaDaSemana(String diaSemana) {
+        List<Turma> turmas;
 
+        if (diaSemana != null && !diaSemana.isBlank()) {
+            turmas = turmaRepository.findByDiaSemanaIgnoreCase(diaSemana);
+        } else {
+            turmas = turmaRepository.findAll();
+        }
 
+        return turmas;
+    }
 
-            List<Turma> turmas;
+    public Turma trocarProfessor(
+            Integer idTurma,
+            Integer idProfessor
+    ){
+        Turma turma = turmaRepository.findById(idTurma)
+                .orElseThrow(() -> new TurmaNaoEncontrada("Turma não encontrada"));
 
-            if (diaSemana != null && !diaSemana.isBlank()) {
-                turmas = turmaRepository.findByDiaSemanaIgnoreCase(diaSemana);
-            } else {
-                turmas = turmaRepository.findAll();
-            }
+        Professor professor = professorRepository.findById(idProfessor)
+                .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
 
-            return turmas;
+        List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now(), idTurma);
 
+        for(Aula aula: aulasFuturas){
+            aula.setProfessor(professor);
+            aulaRepository.save(aula);
+        }
+
+        turma.setProfessor(professor);
+
+        return turmaRepository.save(turma);
+    }
+
+    public List<Turma> listarPorProfessor(Integer professorId) {
+        return turmaRepository.findByProfessor_Id(professorId);
     }
 }

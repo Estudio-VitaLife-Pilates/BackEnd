@@ -9,16 +9,19 @@ import com.pilates.thais.almeida.entity.Turma;
 import java.util.List;
 
 public class TurmaMapper {
-    public static TurmaResponseDto toResponse (Turma turma){
+    public static TurmaResponseDto toResponse(Turma turma){
+        Integer professorId = turma.getProfessor() != null ? turma.getProfessor().getId() : null;
+        String professorNome = turma.getProfessor() != null ? turma.getProfessor().getNome() : null;
 
-        return new TurmaResponseDto(turma.getId(), turma.getDiaSemana(),turma.getHoraInicio(),turma.getDuracaoMinutos(),
-        turma.getAtiva(),turma.getCapacidadeMax());
+        return new TurmaResponseDto(turma.getId(), turma.getDiaSemana(), turma.getHoraInicio(),
+                turma.getDuracaoMinutos(), turma.getCapacidadeMax(), turma.getAtiva(),
+                professorId, professorNome);
     }
     public static Turma toEntity(TurmaRequestDto turmaRequestDto){
         return new Turma(turmaRequestDto.getDiaSemana(),turmaRequestDto.getHoraInicio(),turmaRequestDto.getDuracaoMinutos(),turmaRequestDto.getCapacidadeMax(),turmaRequestDto.getAtiva());
     }
     public static List<TurmaResponseDto> toResponse(List<Turma> turmas){
-       return turmas.stream().map(TurmaMapper::toResponse).toList();
+        return turmas.stream().map(TurmaMapper::toResponse).toList();
     }
     public static  TurmaDetailsResponseDto.TurmaAlunoResponseDto toTurmaAlunoResponseDto(AlunoTurma alunoTurma){
         TurmaDetailsResponseDto.TurmaAlunoResponseDto turmaAlunoResponseDto= new TurmaDetailsResponseDto.TurmaAlunoResponseDto();
@@ -47,6 +50,6 @@ public class TurmaMapper {
 
         );
         turmaDetailsResponseDto.setDuracaoMinutos(turma.getDuracaoMinutos());
-    return turmaDetailsResponseDto;
+        return turmaDetailsResponseDto;
     }
 }

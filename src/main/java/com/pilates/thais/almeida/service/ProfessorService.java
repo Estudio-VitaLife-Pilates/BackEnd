@@ -26,6 +26,10 @@ public class ProfessorService {
         }
         return professorRepository.save(request);
  }
+ public Professor buscarPorId(Integer id){
+        return professorRepository.findById(id).orElseThrow(()->new ProfessorNaoEncontrado("Professor não encontrado"));
+
+ }
 
     public void inativar(Integer id) {
 

@@ -1,15 +1,10 @@
 package com.pilates.thais.almeida.service;
 
-import com.pilates.thais.almeida.entity.Aluno;
-import com.pilates.thais.almeida.entity.AlunoPlano;
-import com.pilates.thais.almeida.entity.Plano;
-import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.AlunoPlanoNaoEncontrado;
-import com.pilates.thais.almeida.exceptions.PlanoNaoEncontrado;
-import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
-import com.pilates.thais.almeida.repository.AlunoRepository;
-import com.pilates.thais.almeida.repository.PlanoRepository;
+import com.pilates.thais.almeida.entity.*;
+import com.pilates.thais.almeida.exceptions.*;
+import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
+import com.pilates.thais.almeida.strategy.CalculoVigenciaPlanoStrategy;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,11 +16,21 @@ public class AlunoService {
     private final AlunoRepository alunoRepository;
     private final PlanoRepository planoRepository;
     private final AlunoPlanoRepository alunoPlanoRepository;
+    private final CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy;
+    private final AlunoTurmaRepository alunoTurmaRepository;
+    private final AulaAlunoRepository aulaAlunoRepository;
 
-    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository, AlunoPlanoRepository alunoPlanoRepository) {
+    public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository,
+                        AlunoPlanoRepository alunoPlanoRepository,
+                        CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy,
+                        AlunoTurmaRepository alunoTurmaRepository,
+                        AulaAlunoRepository aulaAlunoRepository) {
         this.alunoRepository = alunoRepository;
         this.planoRepository = planoRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
+        this.calculoVigenciaPlanoStrategy = calculoVigenciaPlanoStrategy;
+        this.alunoTurmaRepository = alunoTurmaRepository;
+        this.aulaAlunoRepository = aulaAlunoRepository;
     }
 
     public List<Aluno> obterTodos(){
@@ -42,6 +47,9 @@ public class AlunoService {
     }
 
     public Aluno criar(Aluno aluno){
+        if(alunoRepository.existsAlunoByEmail(aluno.getEmail())){
+            throw new CadastroAlunoConflitoEmail("Aluno com este email já existe");
+        }
         return alunoRepository.save(aluno);
     }
 
@@ -56,8 +64,10 @@ public class AlunoService {
 
         alunoPlano.setAluno(aluno);
         alunoPlano.setPlano(plano);
-        alunoPlano.setDataInicio(LocalDate.now());
-        alunoPlano.setDataFim(LocalDate.now().plusDays(plano.getValidadeDias()));
+        LocalDate dataInicio = LocalDate.now();
+
+        alunoPlano.setDataInicio(dataInicio);
+        alunoPlano.setDataFim(calculoVigenciaPlanoStrategy.calcularDataFim(dataInicio, plano));
         alunoPlano.setAtivo(true);
 
         alunoPlanoRepository.save(alunoPlano);
@@ -97,5 +107,29 @@ public class AlunoService {
 
     public void deletarPorId(Integer id){
         alunoRepository.deleteById(id);
+    }
+    public void inativarPorId(Integer id){
+
+        Aluno aluno=alunoRepository.findById(id).orElseThrow
+                (()->new AlunoNaoEncontrado("Aluno não encontrado"));
+        aluno.setAtivo(false);
+        alunoRepository.save(aluno);
+
+        List<AlunoTurma> matriculas = alunoTurmaRepository.findByAlunoIdAndAtivoTrue(id);
+        for (AlunoTurma matricula : matriculas) {
+            matricula.setAtivo(false);
+            alunoTurmaRepository.save(matricula);
+        }
+
+        List<AulaAluno> aulasDoAluno = aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(id);
+        for (AulaAluno aulaAluno : aulasDoAluno) {
+            boolean futuraOuHoje = !aulaAluno.getAula().getDataAula().isBefore(LocalDate.now());
+            boolean aindaAtiva = "AGENDADO".equals(aulaAluno.getStatus()) || "REPOSICAO".equals(aulaAluno.getStatus());
+
+            if (futuraOuHoje && aindaAtiva) {
+                aulaAluno.setStatus("CANCELADA");
+                aulaAlunoRepository.save(aulaAluno);
+            }
+        }
     }
 }

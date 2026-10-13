@@ -50,12 +50,13 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfiguracao {
 
-    @Autowired
-    private AutenticacaoService autenticacaoService;
+    private final AutenticacaoService autenticacaoService;
+    private final AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
 
-    // AutenticacaoEntryPoint é registrado como @Component, o Spring injeta automaticamente
-    @Autowired
-    private AutenticacaoEntryPoint autenticacaoJwtEntryPoint;
+    public SecurityConfiguracao(AutenticacaoService autenticacaoService, AutenticacaoEntryPoint autenticacaoJwtEntryPoint) {
+        this.autenticacaoService = autenticacaoService;
+        this.autenticacaoJwtEntryPoint = autenticacaoJwtEntryPoint;
+    }
 
     /**
      * URLs que não exigem autenticação (acesso público).
@@ -101,7 +102,11 @@ public class SecurityConfiguracao {
                 // Desabilita restrição de X-Frame-Options para permitir o console H2 no browser.
                 // Em produção, remova isso — o H2 console não deve ser exposto.
                 .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
+                        // OWASP: Security Headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                        .xssProtection(HeadersConfigurer.XXssConfig::disable)
+                )
 
                 // Habilita CORS com a configuração definida em corsConfigurationSource()
                 .cors(Customizer.withDefaults())

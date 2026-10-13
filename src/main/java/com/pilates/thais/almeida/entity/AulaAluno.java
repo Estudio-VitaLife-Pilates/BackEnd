@@ -3,7 +3,7 @@ package com.pilates.thais.almeida.entity;
 import jakarta.persistence.*;
 
 @Entity
-public class AulaAluno {
+public class AulaAluno extends Auditavel{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

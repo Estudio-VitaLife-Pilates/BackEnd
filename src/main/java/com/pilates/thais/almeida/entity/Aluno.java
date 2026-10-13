@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Aluno {
+public class Aluno extends Auditavel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

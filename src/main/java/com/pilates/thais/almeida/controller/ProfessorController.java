@@ -28,6 +28,11 @@ public class ProfessorController {
     public ResponseEntity<List<ProfessorReponseDto>> listarProfessores(){
         return ResponseEntity.status(200).body(ProfessorMapper.toResponse(professorService.listar()));
     }
+    @Operation(summary = "Buscar professor por id", description = "Buscar professor específico por ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<ProfessorReponseDto> buscarPorId(@PathVariable Integer id){
+        return ResponseEntity.status(200).body(ProfessorMapper.toResponse(professorService.buscarPorId(id)));
+    }
 
     @Operation(summary = "Cadastrar professor", description = "Cadastrar professor")
     @PostMapping

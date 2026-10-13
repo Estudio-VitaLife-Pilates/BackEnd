@@ -6,7 +6,7 @@ import org.hibernate.annotations.ValueGenerationType;
 import java.time.LocalDate;
 
 @Entity
-public class AlunoTurma {
+public class AlunoTurma  extends Auditavel{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

@@ -4,6 +4,7 @@ import com.pilates.thais.almeida.config.GerenciadorTokenJwt;
 import com.pilates.thais.almeida.dto.usuario.UsuarioListarDto;
 import com.pilates.thais.almeida.dto.usuario.UsuarioTokenDto;
 import com.pilates.thais.almeida.entity.Usuario;
+import com.pilates.thais.almeida.exceptions.CadastroUsuarioConflitoEmail;
 import com.pilates.thais.almeida.mapper.UsuarioMapper;
 import com.pilates.thais.almeida.repository.UsuarioRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,6 +36,10 @@ public class UsuarioService {
         String senhaCrip = passwordEncoder.encode(usuario.getSenha());
         usuario.setSenha(senhaCrip);
 
+        if(usuarioRepository.existsUsuarioByEmail(usuario.getEmail())){
+            throw new CadastroUsuarioConflitoEmail("Usuário já existe");
+        }
+
         usuarioRepository.save(usuario);
     }
 
@@ -61,5 +66,9 @@ public class UsuarioService {
         List<Usuario> usuariosEncontrados = usuarioRepository.findAll();
         return usuariosEncontrados.stream().map(UsuarioMapper::toListarDto).toList();
 
+    }
+
+    public void logout() {
+        SecurityContextHolder.clearContext();
     }
 }
