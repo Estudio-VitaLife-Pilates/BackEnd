@@ -1,7 +1,6 @@
 package com.pilates.thais.almeida.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 public class AulaAluno extends Auditavel{
@@ -23,10 +22,6 @@ public class AulaAluno extends Auditavel{
     @ManyToOne
     @JoinColumn(name = "aula_origem_id")
     private Aula aulaOrigem;
-
-    @Column(nullable = false)
-    @ColumnDefault("0")
-    private Boolean lembreteEnviado = false;
 
     public AulaAluno(Integer id, String status, Aula aula, Aluno aluno, Aula aulaOrigem) {
         this.id = id;
@@ -77,13 +72,5 @@ public class AulaAluno extends Auditavel{
 
     public void setAulaOrigem(Aula aulaOrigem) {
         this.aulaOrigem = aulaOrigem;
-    }
-
-    public Boolean getLembreteEnviado() {
-        return lembreteEnviado;
-    }
-
-    public void setLembreteEnviado(Boolean lembreteEnviado) {
-        this.lembreteEnviado = lembreteEnviado;
     }
 }
