@@ -19,9 +19,9 @@ public interface AlunoTurmaRepository extends JpaRepository<AlunoTurma,Integer> 
 
     Integer countByTurmaIdAndAtivoTrue(Integer id);
 
-    boolean existsByAlunoIdAndTurmaId(Integer id, Integer id1);
+    boolean existsByAlunoIdAndTurmaIdAndAtivoTrue(Integer alunoId, Integer turmaId);
 
-    Integer countByAlunoId(Integer alunoId);
+    Integer countByAlunoIdAndAtivoTrue(Integer alunoId);
 
     @Query("SELECT at.turma.id, COUNT(at) FROM AlunoTurma at WHERE at.ativo = true GROUP BY at.turma.id")
     List<Object[]> countMatriculadosPorTurma();

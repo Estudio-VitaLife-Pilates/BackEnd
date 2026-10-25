@@ -2,10 +2,16 @@ package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.dto.aula.AulaRequestDto;
 import com.pilates.thais.almeida.dto.aula.AulaResponseDto;
+import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.Aula;
+import com.pilates.thais.almeida.entity.AulaAluno;
 import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.entity.Turma;
+import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.AulaNaoEncontrada;
+import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
+import com.pilates.thais.almeida.repository.AlunoRepository;
+import com.pilates.thais.almeida.repository.AulaAlunoRepository;
 import com.pilates.thais.almeida.repository.AulaRepository;
 import com.pilates.thais.almeida.repository.ProfessorRepository;
 import com.pilates.thais.almeida.repository.TurmaRepository;
@@ -32,6 +38,12 @@ class AulaServiceTest {
 
     @Mock
     public AulaRepository repository;
+
+    @Mock
+    public AulaAlunoRepository aulaAlunoRepository;
+
+    @Mock
+    public AlunoRepository alunoRepository;
 
     @InjectMocks
     private AulaService service;
@@ -353,5 +365,439 @@ class AulaServiceTest {
 
         verify(repository).findById(id);
         verify(repository, never()).save(any(Aula.class));
+    }
+
+    @Test
+    @DisplayName("Deve criar aula vinculada ao aluno quando turma e professor existirem")
+    void deveCriarAulaComAlunoQuandoTurmaEProfessorExistirem() {
+        Integer turmaId = 1;
+        Integer professorId = 1;
+
+        Turma turma = new Turma();
+        turma.setId(turmaId);
+
+        Professor professor = new Professor();
+        professor.setId(professorId);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(5);
+
+        Mockito.when(turmaRepository.findById(turmaId)).thenReturn(Optional.of(turma));
+        Mockito.when(professorRepository.findById(professorId)).thenReturn(Optional.of(professor));
+        Mockito.when(repository.save(any(Aula.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Aula resultado = service.criarAula(turmaId, professorId, LocalDate.of(2026, 5, 21), aluno);
+
+        assertNotNull(resultado);
+        assertEquals(turma, resultado.getTurma());
+        assertEquals(professor, resultado.getProfessor());
+        assertTrue(resultado.getMarcada());
+
+        verify(repository).save(any(Aula.class));
+        verify(aulaAlunoRepository).save(any(AulaAluno.class));
+    }
+
+    @Test
+    @DisplayName("Não deve vincular aluno a aula se já estiver vinculado")
+    void naoDeveVincularAlunoSeJaVinculado() {
+        Aula aula = new Aula();
+        aula.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        Mockito.when(aulaAlunoRepository.existsByAula_IdAndAluno_Id(1, 1)).thenReturn(true);
+
+        service.vincularAlunoAAulaExistente(aula, aluno);
+
+        verify(aulaAlunoRepository, never()).save(any(AulaAluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve vincular aluno a aula existente quando ainda não vinculado")
+    void deveVincularAlunoQuandoAindaNaoVinculado() {
+        Aula aula = new Aula();
+        aula.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        Mockito.when(aulaAlunoRepository.existsByAula_IdAndAluno_Id(1, 1)).thenReturn(false);
+
+        service.vincularAlunoAAulaExistente(aula, aluno);
+
+        verify(aulaAlunoRepository).save(any(AulaAluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve trocar o professor da aula com sucesso")
+    void deveTrocarProfessorDaAulaComSucesso() {
+        Integer idAula = 1;
+        Integer idProfessor = 2;
+
+        Aula aula = new Aula();
+        aula.setId(idAula);
+
+        Professor professor = new Professor();
+        professor.setId(idProfessor);
+
+        Mockito.when(repository.findById(idAula)).thenReturn(Optional.of(aula));
+        Mockito.when(professorRepository.findById(idProfessor)).thenReturn(Optional.of(professor));
+        Mockito.when(repository.save(aula)).thenReturn(aula);
+
+        Aula resultado = service.trocarProfessor(idAula, idProfessor);
+
+        assertEquals(professor, resultado.getProfessor());
+        verify(repository).save(aula);
+    }
+
+    @Test
+    @DisplayName("Deve lançar AulaNaoEncontrada ao trocar professor de aula inexistente")
+    void deveLancarAulaNaoEncontradaAoTrocarProfessorDeAulaInexistente() {
+        Mockito.when(repository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(AulaNaoEncontrada.class, () -> service.trocarProfessor(1, 2));
+        verify(professorRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar ProfessorNaoEncontrado ao trocar para professor inexistente")
+    void deveLancarProfessorNaoEncontradoAoTrocarProfessorInexistente() {
+        Aula aula = new Aula();
+        aula.setId(1);
+
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aula));
+        Mockito.when(professorRepository.findById(2)).thenReturn(Optional.empty());
+
+        assertThrows(ProfessorNaoEncontrado.class, () -> service.trocarProfessor(1, 2));
+        verify(repository, never()).save(any(Aula.class));
+    }
+
+    @Test
+    @DisplayName("Deve retornar a próxima aula da turma quando existir")
+    void deveRetornarProximaAulaDaTurmaQuandoExistir() {
+        Aula aula = new Aula();
+        aula.setId(1);
+
+        Mockito.when(repository.findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(
+                        Mockito.eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.of(aula));
+
+        Aula resultado = service.buscarProximaAulaDaTurma(1);
+
+        assertEquals(aula, resultado);
+    }
+
+    @Test
+    @DisplayName("Deve retornar null quando não houver próxima aula da turma")
+    void deveRetornarNullQuandoNaoHouverProximaAulaDaTurma() {
+        Mockito.when(repository.findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(
+                        Mockito.eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+
+        Aula resultado = service.buscarProximaAulaDaTurma(1);
+
+        assertNull(resultado);
+    }
+
+    @Test
+    @DisplayName("Deve listar as próximas aulas da turma ordenadas por data")
+    void deveListarProximasAulasDaTurmaOrdenadasPorData() {
+        Aula aula1 = new Aula();
+        aula1.setDataAula(LocalDate.of(2026, 6, 10));
+
+        Aula aula2 = new Aula();
+        aula2.setDataAula(LocalDate.of(2026, 6, 1));
+
+        Mockito.when(repository.findAllByDataAulaAfterAndTurma_Id(any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(List.of(aula1, aula2));
+
+        List<Aula> resultado = service.listarProximasAulasDaTurma(1);
+
+        assertEquals(2, resultado.size());
+        assertEquals(aula2.getDataAula(), resultado.get(0).getDataAula());
+        assertEquals(aula1.getDataAula(), resultado.get(1).getDataAula());
+    }
+
+    @Test
+    @DisplayName("Deve retornar a próxima aula já existente sem criar uma nova")
+    void deveRetornarProximaAulaExistenteSemCriarNova() {
+        Aula aulaExistente = new Aula();
+        aulaExistente.setId(1);
+
+        Mockito.when(repository.findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(
+                        Mockito.eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.of(aulaExistente));
+
+        Aula resultado = service.buscarOuCriarProximaAulaDaTurma(1);
+
+        assertEquals(aulaExistente, resultado);
+        verify(turmaRepository, never()).findById(any());
+        verify(repository, never()).save(any(Aula.class));
+    }
+
+    @Test
+    @DisplayName("Deve criar a próxima aula da turma quando ainda não existir")
+    void deveCriarProximaAulaDaTurmaQuandoNaoExistir() {
+        Turma turma = new Turma(Turma.DiaSemana.SEGUNDA, java.time.LocalTime.of(8, 0), 60, 10, true);
+        turma.setId(1);
+
+        Professor professor = new Professor();
+        professor.setId(1);
+        turma.setProfessor(professor);
+
+        Mockito.when(repository.findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(
+                        Mockito.eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(repository.save(any(Aula.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Aula resultado = service.buscarOuCriarProximaAulaDaTurma(1);
+
+        assertNotNull(resultado);
+        assertEquals(turma, resultado.getTurma());
+        assertEquals(professor, resultado.getProfessor());
+        assertEquals(java.time.DayOfWeek.MONDAY, resultado.getDataAula().getDayOfWeek());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao criar próxima aula de turma inexistente")
+    void deveLancarExcecaoAoCriarProximaAulaDeTurmaInexistente() {
+        Mockito.when(repository.findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(
+                        Mockito.eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> service.buscarOuCriarProximaAulaDaTurma(1));
+    }
+
+    @Test
+    @DisplayName("Deve listar os alunos de uma aula")
+    void deveListarAlunosDaAula() {
+        AulaAluno aulaAluno = new AulaAluno();
+
+        Mockito.when(aulaAlunoRepository.findByAula_Id(1)).thenReturn(List.of(aulaAluno));
+
+        List<AulaAluno> resultado = service.listarAlunosDaAula(1);
+
+        assertEquals(1, resultado.size());
+        verify(aulaAlunoRepository).findByAula_Id(1);
+    }
+
+    @Test
+    @DisplayName("Deve remover o aluno da aula")
+    void deveRemoverAlunoDaAula() {
+        service.removerAlunoDaAula(1);
+
+        verify(aulaAlunoRepository).deleteById(1);
+    }
+
+    @Test
+    @DisplayName("Deve listar as aulas do aluno ordenadas por data")
+    void deveListarAulasDoAluno() {
+        AulaAluno aulaAluno = new AulaAluno();
+
+        Mockito.when(aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(1)).thenReturn(List.of(aulaAluno));
+
+        List<AulaAluno> resultado = service.listarAulasDoAluno(1);
+
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    @DisplayName("Deve calcular as vagas disponíveis na aula")
+    void deveCalcularVagasDisponiveisNaAula() {
+        Turma turma = new Turma();
+        turma.setCapacidadeMax(10);
+
+        Aula aula = new Aula();
+        aula.setId(1);
+        aula.setTurma(turma);
+
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aula));
+        Mockito.when(aulaAlunoRepository.countOcupantesAtivosDaAula(1)).thenReturn(4);
+
+        Integer resultado = service.vagasDisponiveisNaAula(1);
+
+        assertEquals(6, resultado);
+    }
+
+    @Test
+    @DisplayName("Deve lançar AulaNaoEncontrada ao calcular vagas de aula inexistente")
+    void deveLancarAulaNaoEncontradaAoCalcularVagasDeAulaInexistente() {
+        Mockito.when(repository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(AulaNaoEncontrada.class, () -> service.vagasDisponiveisNaAula(1));
+    }
+
+    @Test
+    @DisplayName("Deve cancelar a aula do aluno")
+    void deveCancelarAulaDoAluno() {
+        AulaAluno aulaAluno = new AulaAluno();
+        aulaAluno.setId(1);
+        aulaAluno.setStatus("AGENDADO");
+
+        Mockito.when(aulaAlunoRepository.findById(1)).thenReturn(Optional.of(aulaAluno));
+
+        service.cancelarAulaDoAluno(1);
+
+        assertEquals("CANCELADA", aulaAluno.getStatus());
+        verify(aulaAlunoRepository).save(aulaAluno);
+    }
+
+    @Test
+    @DisplayName("Deve lançar AulaNaoEncontrada ao cancelar registro de aula inexistente")
+    void deveLancarAulaNaoEncontradaAoCancelarRegistroInexistente() {
+        Mockito.when(aulaAlunoRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(AulaNaoEncontrada.class, () -> service.cancelarAulaDoAluno(1));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao registrar reposição na mesma aula de origem")
+    void deveLancarExcecaoAoRegistrarReposicaoNaMesmaAula() {
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> service.registrarReposicao(1, 1, 1));
+
+        assertEquals("A aula de destino não pode ser a mesma que a aula de origem.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao registrar reposição sem vagas na aula de destino")
+    void deveLancarExcecaoAoRegistrarReposicaoSemVagas() {
+        Turma turma = new Turma();
+        turma.setCapacidadeMax(1);
+
+        Aula aulaDestino = new Aula();
+        aulaDestino.setId(2);
+        aulaDestino.setTurma(turma);
+
+        Aula aulaOrigem = new Aula();
+        aulaOrigem.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        Mockito.when(repository.findById(2)).thenReturn(Optional.of(aulaDestino));
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aulaOrigem));
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(aulaAlunoRepository.countOcupantesAtivosDaAula(2)).thenReturn(1);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> service.registrarReposicao(2, 1, 1));
+
+        assertEquals("Turma de destino está sem vagas para essa data.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao registrar reposição se aluno já estiver confirmado na aula destino")
+    void deveLancarExcecaoAoRegistrarReposicaoSeJaConfirmado() {
+        Turma turma = new Turma();
+        turma.setCapacidadeMax(10);
+
+        Aula aulaDestino = new Aula();
+        aulaDestino.setId(2);
+        aulaDestino.setTurma(turma);
+
+        Aula aulaOrigem = new Aula();
+        aulaOrigem.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        AulaAluno jaConfirmado = new AulaAluno();
+        jaConfirmado.setStatus("AGENDADO");
+
+        Mockito.when(repository.findById(2)).thenReturn(Optional.of(aulaDestino));
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aulaOrigem));
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(aulaAlunoRepository.countOcupantesAtivosDaAula(2)).thenReturn(0);
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(2, 1)).thenReturn(Optional.of(jaConfirmado));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> service.registrarReposicao(2, 1, 1));
+
+        assertEquals("Aluno já está confirmado nessa aula.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve registrar a reposição com sucesso")
+    void deveRegistrarReposicaoComSucesso() {
+        Turma turma = new Turma();
+        turma.setCapacidadeMax(10);
+
+        Aula aulaDestino = new Aula();
+        aulaDestino.setId(2);
+        aulaDestino.setTurma(turma);
+
+        Aula aulaOrigem = new Aula();
+        aulaOrigem.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        AulaAluno aulaAlunoOrigem = new AulaAluno();
+        aulaAlunoOrigem.setStatus("AGENDADO");
+
+        Mockito.when(repository.findById(2)).thenReturn(Optional.of(aulaDestino));
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aulaOrigem));
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(aulaAlunoRepository.countOcupantesAtivosDaAula(2)).thenReturn(0);
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(2, 1)).thenReturn(Optional.empty());
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(1, 1)).thenReturn(Optional.of(aulaAlunoOrigem));
+        Mockito.when(aulaAlunoRepository.save(any(AulaAluno.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AulaAluno resultado = service.registrarReposicao(2, 1, 1);
+
+        assertEquals("REPOSICAO", resultado.getStatus());
+        assertEquals(aulaDestino, resultado.getAula());
+        assertEquals(aulaOrigem, resultado.getAulaOrigem());
+        assertEquals("CANCELADA", aulaAlunoOrigem.getStatus());
+        verify(aulaAlunoRepository, Mockito.times(2)).save(any(AulaAluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção se a aula de origem não pertencer ao aluno")
+    void deveLancarExcecaoSeAulaOrigemNaoPertencerAoAluno() {
+        Turma turma = new Turma();
+        turma.setCapacidadeMax(10);
+
+        Aula aulaDestino = new Aula();
+        aulaDestino.setId(2);
+        aulaDestino.setTurma(turma);
+
+        Aula aulaOrigem = new Aula();
+        aulaOrigem.setId(1);
+
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+
+        Mockito.when(repository.findById(2)).thenReturn(Optional.of(aulaDestino));
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aulaOrigem));
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(aulaAlunoRepository.countOcupantesAtivosDaAula(2)).thenReturn(0);
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(2, 1)).thenReturn(Optional.empty());
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(1, 1)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> service.registrarReposicao(2, 1, 1));
+
+        assertEquals("Essa aula de origem não pertence ao aluno informado.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve lançar AlunoNaoEncontrado ao registrar reposição de aluno inexistente")
+    void deveLancarAlunoNaoEncontradoAoRegistrarReposicao() {
+        Aula aulaDestino = new Aula();
+        aulaDestino.setId(2);
+
+        Aula aulaOrigem = new Aula();
+        aulaOrigem.setId(1);
+
+        Mockito.when(repository.findById(2)).thenReturn(Optional.of(aulaDestino));
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(aulaOrigem));
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(AlunoNaoEncontrado.class, () -> service.registrarReposicao(2, 1, 1));
     }
 }

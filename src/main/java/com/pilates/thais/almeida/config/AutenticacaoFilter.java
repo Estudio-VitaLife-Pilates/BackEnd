@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -133,7 +134,17 @@ public class AutenticacaoFilter extends OncePerRequestFilter {
      * {@link SecurityContextHolder} da thread atual.
      */
     private void registrarAutenticacaoNoContexto(HttpServletRequest request, String username, String jwtToken) {
-        UserDetails userDetails = autenticacaoService.loadUserByUsername(username);
+        UserDetails userDetails;
+
+        try {
+            userDetails = autenticacaoService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
+            // Token assinado corretamente, mas o usuário não existe mais (ex.: conta
+            // apagada depois do token ser emitido). Trata como requisição anônima em
+            // vez de derrubar a requisição inteira com 500 — inclusive em rotas públicas.
+            LOGGER.warn("[AUTENTICACAO] Token válido para usuário que não existe mais: '{}'", username);
+            return;
+        }
 
         if (jwtTokenManager.validateToken(jwtToken, userDetails)) {
             UsernamePasswordAuthenticationToken autenticacao = new UsernamePasswordAuthenticationToken(
