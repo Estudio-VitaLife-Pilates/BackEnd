@@ -123,10 +123,12 @@ class TurmaServiceTest {
     @DisplayName("Deve cadastrar uma turma")
     void cadastrarTurma() {
         turmaRequest.setProfessorId(1);
-        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(new Professor()));
+        Professor professor = new Professor();
+        professor.setId(1);
+        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(professor));
 
-        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndAtivaTrue(
-                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrue(
+                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana(), 1))
                 .thenReturn(false);
 
         Mockito.when(turmaRepository.save(Mockito.any(Turma.class)))
@@ -136,19 +138,23 @@ class TurmaServiceTest {
 
         assertNotNull(resultado);
         assertEquals(DiaSemana.SEGUNDA, resultado.getDiaSemana());
-        Mockito.verify(turmaRepository).existsByHoraInicioAndDiaSemanaAndAtivaTrue(turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana());
+        Mockito.verify(turmaRepository).existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrue(turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana(), 1);
         Mockito.verify(turmaRepository).save(Mockito.any(Turma.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao cadastrar turma em horário ocupado")
+    @DisplayName("Deve lançar exceção ao cadastrar turma em horário ocupado pelo mesmo professor")
     void cadastrarTurmaHorarioOcupado() {
-        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndAtivaTrue(
-                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
+        turmaRequest.setProfessorId(1);
+        Professor professor = new Professor();
+        professor.setId(1);
+        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(professor));
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrue(
+                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana(), 1))
                 .thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> service.cadastrar(turmaRequest));
-        assertEquals("Ja existe uma turma ativa nesse horário.", ex.getMessage());
+        assertEquals("Esse professor já tem uma turma ativa nesse horário.", ex.getMessage());
     }
 
     @Test

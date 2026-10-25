@@ -49,20 +49,21 @@ public class TurmaService {
 
     public Turma cadastrar(TurmaRequestDto requestDto) {
 
-        boolean turmaExiste = turmaRepository
-                .existsByHoraInicioAndDiaSemanaAndAtivaTrue(
-                        requestDto.getHoraInicio(),
-                        requestDto.getDiaSemana()
-                );
-
-        if (turmaExiste) {
-            throw new RuntimeException(
-                    "Ja existe uma turma ativa nesse horário."
-            );
-        }
-
         Professor professor = professorRepository.findById(requestDto.getProfessorId())
                 .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
+
+        boolean professorJaTemTurmaNesseHorario = turmaRepository
+                .existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrue(
+                        requestDto.getHoraInicio(),
+                        requestDto.getDiaSemana(),
+                        professor.getId()
+                );
+
+        if (professorJaTemTurmaNesseHorario) {
+            throw new RuntimeException(
+                    "Esse professor já tem uma turma ativa nesse horário."
+            );
+        }
 
         Turma turma = TurmaMapper.toEntity(requestDto);
         turma.setProfessor(professor);
@@ -77,15 +78,16 @@ public class TurmaService {
                 .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
 
         if (Boolean.TRUE.equals(requestDto.getAtiva())) {
-            boolean colideComOutraTurma = turmaRepository
-                    .existsByHoraInicioAndDiaSemanaAndAtivaTrueAndIdNot(
+            boolean professorJaTemTurmaNesseHorario = turmaRepository
+                    .existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrueAndIdNot(
                             requestDto.getHoraInicio(),
                             requestDto.getDiaSemana(),
+                            professor.getId(),
                             id
                     );
 
-            if (colideComOutraTurma) {
-                throw new RuntimeException("Ja existe uma turma ativa nesse horário.");
+            if (professorJaTemTurmaNesseHorario) {
+                throw new RuntimeException("Esse professor já tem uma turma ativa nesse horário.");
             }
         }
 
