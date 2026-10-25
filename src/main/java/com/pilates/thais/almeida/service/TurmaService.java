@@ -50,15 +50,14 @@ public class TurmaService {
     public Turma cadastrar(TurmaRequestDto requestDto) {
 
         boolean turmaExiste = turmaRepository
-                .existsByHoraInicioAndDiaSemana(
-
+                .existsByHoraInicioAndDiaSemanaAndAtivaTrue(
                         requestDto.getHoraInicio(),
                         requestDto.getDiaSemana()
                 );
 
         if (turmaExiste) {
             throw new RuntimeException(
-                    "Ja existe uma turma nesse horário."
+                    "Ja existe uma turma ativa nesse horário."
             );
         }
 
@@ -77,9 +76,23 @@ public class TurmaService {
         Professor professor = professorRepository.findById(requestDto.getProfessorId())
                 .orElseThrow(() -> new ProfessorNaoEncontrado("Professor não encontrado"));
 
+        if (Boolean.TRUE.equals(requestDto.getAtiva())) {
+            boolean colideComOutraTurma = turmaRepository
+                    .existsByHoraInicioAndDiaSemanaAndAtivaTrueAndIdNot(
+                            requestDto.getHoraInicio(),
+                            requestDto.getDiaSemana(),
+                            id
+                    );
+
+            if (colideComOutraTurma) {
+                throw new RuntimeException("Ja existe uma turma ativa nesse horário.");
+            }
+        }
+
         turma.setAtiva(requestDto.getAtiva());
         turma.setCapacidadeMax(requestDto.getCapacidadeMax());
         turma.setDiaSemana(requestDto.getDiaSemana());
+        turma.setHoraInicio(requestDto.getHoraInicio());
         turma.setDuracaoMinutos(requestDto.getDuracaoMinutos());
         turma.setProfessor(professor);
         return turmaRepository.save(turma);
@@ -117,12 +130,12 @@ public class TurmaService {
 
         Integer frequenciaSemanal = alunoPlanos.getFirst().getPlano().getFrequenciaSemanal();
 
-        if(frequenciaSemanal < alunoTurmaRepository.countByAlunoId(aluno.getId())+1){
+        if(frequenciaSemanal < alunoTurmaRepository.countByAlunoIdAndAtivoTrue(aluno.getId())+1){
             throw new UsuarioJaCadastradoNoMaximoDeTurmas("Usuário já cadastrado no máximo de turmas que o plano permite.");
         }
 
         boolean alunoJaExiste = alunoTurmaRepository
-                .existsByAlunoIdAndTurmaId(aluno.getId(), turma.getId());
+                .existsByAlunoIdAndTurmaIdAndAtivoTrue(aluno.getId(), turma.getId());
 
         if (alunoJaExiste) {
             throw new RuntimeException("Aluno já cadastrado nessa turma");

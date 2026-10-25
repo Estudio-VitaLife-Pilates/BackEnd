@@ -125,7 +125,7 @@ class TurmaServiceTest {
         turmaRequest.setProfessorId(1);
         Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(new Professor()));
 
-        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemana(
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndAtivaTrue(
                         turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
                 .thenReturn(false);
 
@@ -136,19 +136,19 @@ class TurmaServiceTest {
 
         assertNotNull(resultado);
         assertEquals(DiaSemana.SEGUNDA, resultado.getDiaSemana());
-        Mockito.verify(turmaRepository).existsByHoraInicioAndDiaSemana(turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana());
+        Mockito.verify(turmaRepository).existsByHoraInicioAndDiaSemanaAndAtivaTrue(turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana());
         Mockito.verify(turmaRepository).save(Mockito.any(Turma.class));
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao cadastrar turma em horário ocupado")
     void cadastrarTurmaHorarioOcupado() {
-        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemana(
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndAtivaTrue(
                         turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana()))
                 .thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> service.cadastrar(turmaRequest));
-        assertEquals("Ja existe uma turma nesse horário.", ex.getMessage());
+        assertEquals("Ja existe uma turma ativa nesse horário.", ex.getMessage());
     }
 
     @Test
@@ -212,7 +212,7 @@ class TurmaServiceTest {
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
         Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(criarAlunoPlanoAtivo(aluno)));
-        Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(false);
+        Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaIdAndAtivoTrue(1,1)).thenReturn(false);
         Mockito.when(geracaoDatasAulaStrategy.gerarDatas(Mockito.eq(turma), Mockito.any(AlunoPlano.class), Mockito.any(LocalDate.class)))
                 .thenReturn(List.of());
 
@@ -248,7 +248,7 @@ class TurmaServiceTest {
         Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
         Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(criarAlunoPlanoAtivo(aluno)));
-        Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaId(1,1)).thenReturn(true);
+        Mockito.when(alunoTurmaRepository.existsByAlunoIdAndTurmaIdAndAtivoTrue(1,1)).thenReturn(true);
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.cadastrarAlunoEmUmaTurma(1, alunoRequest));
 

@@ -213,10 +213,12 @@ public class SecurityConfiguracao {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuracao = new CorsConfiguration();
 
-        // Origens permitidas — deve ser explícita quando allowCredentials=true
+        // Origens permitidas — deve ser explícita quando allowCredentials=true.
+        // Usa allowedOriginPatterns (aceita wildcard mesmo com credentials=true) porque
+        // o Vite muda de porta sozinho quando a padrão (5173) já está ocupada.
         // Em produção: List.of("https://meuapp.com.br")
-        configuracao.setAllowedOrigins(List.of(
-                "http://localhost:5173",  // Vite dev server
+        configuracao.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",  // Vite dev server (porta muda se 5173 estiver ocupada)
                 "http://localhost:3000"   // Create React App (alternativa)
         ));
 

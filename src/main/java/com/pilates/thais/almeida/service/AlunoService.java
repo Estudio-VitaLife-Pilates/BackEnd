@@ -60,6 +60,17 @@ public class AlunoService {
         Plano plano = planoRepository.findById(idPlano)
                 .orElseThrow(() -> new PlanoNaoEncontrado(""));
 
+        boolean jaTemEstePlanoAtivo = alunoPlanoRepository
+                .findByAtivoIsTrueAndAluno_Id(idAluno)
+                .stream()
+                .anyMatch(ap -> ap.getPlano().getId().equals(idPlano));
+
+        if (jaTemEstePlanoAtivo) {
+            throw new RuntimeException(
+                    aluno.getNome() + " já está vinculado(a) ao plano \"" + plano.getNome() + "\"."
+            );
+        }
+
         AlunoPlano alunoPlano = new AlunoPlano();
 
         alunoPlano.setAluno(aluno);

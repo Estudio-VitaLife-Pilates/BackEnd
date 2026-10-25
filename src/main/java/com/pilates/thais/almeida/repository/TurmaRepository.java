@@ -13,7 +13,11 @@ public interface TurmaRepository extends JpaRepository<Turma,Integer> {
 
     List<Turma> findByDiaSemanaIgnoreCase(String diaSemana);
 
-    boolean existsByHoraInicioAndDiaSemana(LocalTime horaInicio, Turma.DiaSemana diaSemana);
+    boolean existsByHoraInicioAndDiaSemanaAndAtivaTrue(LocalTime horaInicio, Turma.DiaSemana diaSemana);
+
+    boolean existsByHoraInicioAndDiaSemanaAndAtivaTrueAndIdNot(LocalTime horaInicio, Turma.DiaSemana diaSemana, Integer id);
 
     List<Turma> findByProfessor_Id(Integer professorId);
+
+    List<Turma> findByProfessor_IdAndAtivaTrue(Integer professorId);
 }

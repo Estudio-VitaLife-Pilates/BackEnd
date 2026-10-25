@@ -2,6 +2,7 @@ package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.repository.ProfessorRepository;
+import com.pilates.thais.almeida.repository.TurmaRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,9 @@ class ProfessorServiceTest {
 
     @Mock
     private ProfessorRepository repository;
+
+    @Mock
+    private TurmaRepository turmaRepository;
 
     @InjectMocks
     private ProfessorService service;
