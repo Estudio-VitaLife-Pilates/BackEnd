@@ -184,6 +184,48 @@ class TurmaServiceTest {
     }
 
     @Test
+    @DisplayName("Deve lançar exceção ao atualizar turma para horário já ocupado pelo mesmo professor")
+    void atualizarTurmaHorarioOcupadoPeloMesmoProfessor() {
+        turmaRequest.setProfessorId(1);
+        Professor professor = new Professor();
+        professor.setId(1);
+
+        Turma existente = criarTurmaComProfessor();
+        existente.setId(1);
+
+        Mockito.when(professorRepository.findById(1)).thenReturn(Optional.of(professor));
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(existente));
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrueAndIdNot(
+                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana(), 1, 1))
+                .thenReturn(true);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.atualizar(turmaRequest, 1));
+        assertEquals("Esse professor já tem uma turma ativa nesse horário.", ex.getMessage());
+        Mockito.verify(turmaRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve permitir cadastrar turma no mesmo horário com professor diferente")
+    void cadastrarTurmaMesmoHorarioProfessorDiferente() {
+        turmaRequest.setProfessorId(2);
+        Professor professor = new Professor();
+        professor.setId(2);
+
+        Mockito.when(professorRepository.findById(2)).thenReturn(Optional.of(professor));
+        // O professor 2 não tem turma nesse horário — só o professor 1 (de outra turma) teria.
+        Mockito.when(turmaRepository.existsByHoraInicioAndDiaSemanaAndProfessor_IdAndAtivaTrue(
+                        turmaRequest.getHoraInicio(), turmaRequest.getDiaSemana(), 2))
+                .thenReturn(false);
+        Mockito.when(turmaRepository.save(Mockito.any(Turma.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Turma resultado = service.cadastrar(turmaRequest);
+
+        assertNotNull(resultado);
+        Mockito.verify(turmaRepository).save(Mockito.any(Turma.class));
+    }
+
+    @Test
     @DisplayName("Deve inativar turma")
     void inativarTurma() {
         Turma turma = criarTurmaComProfessor();
