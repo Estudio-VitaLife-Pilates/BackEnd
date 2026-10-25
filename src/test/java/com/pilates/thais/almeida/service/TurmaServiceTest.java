@@ -55,6 +55,9 @@ class TurmaServiceTest {
     private AulaRepository aulaRepository;
 
     @Mock
+    private com.pilates.thais.almeida.repository.AulaAlunoRepository aulaAlunoRepository;
+
+    @Mock
     private AulaService aulaService;
 
     @Mock
@@ -314,5 +317,180 @@ class TurmaServiceTest {
         alunoPlano.setDataFim(LocalDate.now());
 
         return alunoPlano;
+    }
+
+    @Test
+    @DisplayName("Deve buscar turma por id")
+    void deveBuscarTurmaPorId() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+
+        Turma resultado = service.buscarPorId(1);
+
+        assertEquals(turma, resultado);
+    }
+
+    @Test
+    @DisplayName("Deve lançar TurmaNaoEncontrada ao buscar turma inexistente por id")
+    void deveLancarTurmaNaoEncontradaAoBuscarPorId() {
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(TurmaNaoEncontrada.class, () -> service.buscarPorId(1));
+    }
+
+    @Test
+    @DisplayName("Deve buscar alunos por turma")
+    void deveBuscarAlunosPorTurma() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+
+        Turma resultado = service.buscarAlunosPorTurma(1);
+
+        assertEquals(turma, resultado);
+    }
+
+    @Test
+    @DisplayName("Deve lançar TurmaNaoEncontrada ao buscar alunos de turma inexistente")
+    void deveLancarTurmaNaoEncontradaAoBuscarAlunosPorTurma() {
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(TurmaNaoEncontrada.class, () -> service.buscarAlunosPorTurma(1));
+    }
+
+    @Test
+    @DisplayName("Deve excluir aluno da turma e cancelar as aulas futuras dele")
+    void deveExcluirAlunoDaTurma() {
+        Turma turma = criarTurmaComProfessor();
+
+        AlunoTurma alunoTurma = new AlunoTurma();
+        alunoTurma.setId(10);
+        alunoTurma.setTurma(turma);
+
+        com.pilates.thais.almeida.entity.Aula aulaFutura = new com.pilates.thais.almeida.entity.Aula();
+        aulaFutura.setId(20);
+
+        com.pilates.thais.almeida.entity.AulaAluno aulaAluno = new com.pilates.thais.almeida.entity.AulaAluno();
+        aulaAluno.setStatus("AGENDADO");
+
+        Mockito.when(alunoTurmaRepository.findByAlunoIdAndTurmaId(1, 1)).thenReturn(alunoTurma);
+        Mockito.when(aulaRepository.findAllByDataAulaAfterAndTurma_Id(Mockito.any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(List.of(aulaFutura));
+        Mockito.when(aulaAlunoRepository.findByAula_IdAndAluno_Id(20, 1)).thenReturn(Optional.of(aulaAluno));
+
+        Turma resultado = service.excluirAlunoDaTurma(1, 1);
+
+        assertEquals(turma, resultado);
+        assertEquals("CANCELADA", aulaAluno.getStatus());
+        Mockito.verify(aulaAlunoRepository).save(aulaAluno);
+        Mockito.verify(alunoTurmaRepository).removeById(10);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao excluir aluno não matriculado na turma")
+    void deveLancarExcecaoAoExcluirAlunoNaoMatriculado() {
+        Mockito.when(alunoTurmaRepository.findByAlunoIdAndTurmaId(1, 1)).thenReturn(null);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.excluirAlunoDaTurma(1, 1));
+        assertEquals("Aluno não está matriculado nessa turma", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve calcular as vagas disponíveis da turma")
+    void deveCalcularVagasDisponiveis() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(alunoTurmaRepository.countByTurmaIdAndAtivoTrue(1)).thenReturn(4);
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(calculoVagasTurmaStrategy.calcular(turma, 4)).thenReturn(6);
+
+        Integer resultado = service.vagasDisponiveis(1);
+
+        assertEquals(6, resultado);
+    }
+
+    @Test
+    @DisplayName("Deve buscar turmas por dia da semana quando informado")
+    void deveBuscarTurmasPorDiaDaSemanaQuandoInformado() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findByDiaSemanaIgnoreCase("SEGUNDA")).thenReturn(List.of(turma));
+
+        List<Turma> resultado = service.buscarPorDiaDaSemana("SEGUNDA");
+
+        assertEquals(1, resultado.size());
+        Mockito.verify(turmaRepository, Mockito.never()).findAll();
+    }
+
+    @Test
+    @DisplayName("Deve buscar todas as turmas quando o dia da semana não for informado")
+    void deveBuscarTodasAsTurmasQuandoDiaDaSemanaNaoInformado() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findAll()).thenReturn(List.of(turma));
+
+        List<Turma> resultado = service.buscarPorDiaDaSemana(null);
+
+        assertEquals(1, resultado.size());
+        Mockito.verify(turmaRepository, Mockito.never()).findByDiaSemanaIgnoreCase(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve trocar o professor da turma e das aulas futuras")
+    void deveTrocarProfessorDaTurma() {
+        Turma turma = criarTurmaComProfessor();
+
+        Professor novoProfessor = new Professor();
+        novoProfessor.setId(2);
+
+        com.pilates.thais.almeida.entity.Aula aulaFutura = new com.pilates.thais.almeida.entity.Aula();
+        aulaFutura.setId(5);
+
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(professorRepository.findById(2)).thenReturn(Optional.of(novoProfessor));
+        Mockito.when(aulaRepository.findAllByDataAulaAfterAndTurma_Id(Mockito.any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(List.of(aulaFutura));
+        Mockito.when(turmaRepository.save(turma)).thenReturn(turma);
+
+        Turma resultado = service.trocarProfessor(1, 2);
+
+        assertEquals(novoProfessor, resultado.getProfessor());
+        assertEquals(novoProfessor, aulaFutura.getProfessor());
+        Mockito.verify(aulaRepository).save(aulaFutura);
+    }
+
+    @Test
+    @DisplayName("Deve lançar TurmaNaoEncontrada ao trocar professor de turma inexistente")
+    void deveLancarTurmaNaoEncontradaAoTrocarProfessor() {
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(TurmaNaoEncontrada.class, () -> service.trocarProfessor(1, 2));
+    }
+
+    @Test
+    @DisplayName("Deve lançar ProfessorNaoEncontrado ao trocar para professor inexistente na turma")
+    void deveLancarProfessorNaoEncontradoAoTrocarProfessorDaTurma() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(professorRepository.findById(2)).thenReturn(Optional.empty());
+
+        assertThrows(com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado.class,
+                () -> service.trocarProfessor(1, 2));
+        Mockito.verify(turmaRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve listar turmas por professor")
+    void deveListarTurmasPorProfessor() {
+        Turma turma = criarTurmaComProfessor();
+
+        Mockito.when(turmaRepository.findByProfessor_Id(99)).thenReturn(List.of(turma));
+
+        List<Turma> resultado = service.listarPorProfessor(99);
+
+        assertEquals(1, resultado.size());
+        assertEquals(turma, resultado.get(0));
     }
 }
