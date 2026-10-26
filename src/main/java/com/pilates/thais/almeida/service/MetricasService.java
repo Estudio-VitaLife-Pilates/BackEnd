@@ -261,12 +261,13 @@ public class MetricasService {
 
     private AulaHojeResponseDto mapearAulaHoje(Aula aula) {
         Turma turma = aula.getTurma();
+        Integer turmaId = turma != null ? turma.getId() : null;
         LocalTime horaInicio = turma != null ? turma.getHoraInicio() : null;
         String turmaDiaSemana = turma != null && turma.getDiaSemana() != null ? turma.getDiaSemana().name() : null;
         String professorNome = aula.getProfessor() != null ? aula.getProfessor().getNome() : null;
         long totalAlunos = aula.getAlunos() == null ? 0 : aula.getAlunos().size();
 
-        return new AulaHojeResponseDto(aula.getId(), horaInicio, professorNome, turmaDiaSemana, totalAlunos);
+        return new AulaHojeResponseDto(aula.getId(), turmaId, horaInicio, professorNome, turmaDiaSemana, totalAlunos);
     }
 
     private LocalDate hoje() {
