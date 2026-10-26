@@ -5,6 +5,8 @@ import com.pilates.thais.almeida.dto.turma.TurmaRequestDto;
 import com.pilates.thais.almeida.entity.Aluno;
 import com.pilates.thais.almeida.entity.AlunoPlano;
 import com.pilates.thais.almeida.entity.AlunoTurma;
+import com.pilates.thais.almeida.entity.Aula;
+import com.pilates.thais.almeida.entity.AulaAluno;
 import com.pilates.thais.almeida.entity.Plano;
 import com.pilates.thais.almeida.entity.Professor;
 import com.pilates.thais.almeida.entity.Turma;
@@ -247,6 +249,46 @@ class TurmaServiceTest {
         Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.empty());
 
         assertThrows(TurmaNaoEncontrada.class, () -> service.inativar(1));
+    }
+
+    @Test
+    @DisplayName("Deve desativar matriculas e cancelar aulas futuras ao inativar turma")
+    void inativarTurmaDesativaMatriculasECancelaAulasFuturas() {
+        Turma turma = criarTurmaComProfessor();
+
+        AlunoTurma matricula = new AlunoTurma();
+        matricula.setId(10);
+        matricula.setAtivo(true);
+
+        Aula aulaFutura = new Aula();
+        aulaFutura.setId(20);
+
+        AulaAluno aulaAlunoAgendado = new AulaAluno();
+        aulaAlunoAgendado.setStatus("AGENDADO");
+
+        AulaAluno aulaAlunoReposicao = new AulaAluno();
+        aulaAlunoReposicao.setStatus("REPOSICAO");
+
+        AulaAluno aulaAlunoJaCancelado = new AulaAluno();
+        aulaAlunoJaCancelado.setStatus("CANCELADA");
+
+        Mockito.when(turmaRepository.findById(1)).thenReturn(Optional.of(turma));
+        Mockito.when(alunoTurmaRepository.findAllByTurmaIdAndAtivoTrue(1)).thenReturn(List.of(matricula));
+        Mockito.when(aulaRepository.findAllByDataAulaAfterAndTurma_Id(Mockito.any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(List.of(aulaFutura));
+        Mockito.when(aulaAlunoRepository.findByAula_Id(20))
+                .thenReturn(List.of(aulaAlunoAgendado, aulaAlunoReposicao, aulaAlunoJaCancelado));
+
+        service.inativar(1);
+
+        assertFalse(matricula.getAtivo());
+        Mockito.verify(alunoTurmaRepository).save(matricula);
+
+        assertEquals("CANCELADA", aulaAlunoAgendado.getStatus());
+        assertEquals("CANCELADA", aulaAlunoReposicao.getStatus());
+        Mockito.verify(aulaAlunoRepository).save(aulaAlunoAgendado);
+        Mockito.verify(aulaAlunoRepository).save(aulaAlunoReposicao);
+        Mockito.verify(aulaAlunoRepository, Mockito.never()).save(aulaAlunoJaCancelado);
     }
 
     @Test

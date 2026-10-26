@@ -105,6 +105,22 @@ public class TurmaService {
         Turma turma= turmaRepository.findById(id).orElseThrow(()->new TurmaNaoEncontrada("Turma nao encontrada"));
         turma.setAtiva(false);
         turmaRepository.save(turma);
+
+        List<AlunoTurma> matriculas = alunoTurmaRepository.findAllByTurmaIdAndAtivoTrue(id);
+        for (AlunoTurma matricula : matriculas) {
+            matricula.setAtivo(false);
+            alunoTurmaRepository.save(matricula);
+        }
+
+        List<Aula> aulasFuturas = aulaRepository.findAllByDataAulaAfterAndTurma_Id(LocalDate.now().minusDays(1), id);
+        for (Aula aula : aulasFuturas) {
+            for (AulaAluno aulaAluno : aulaAlunoRepository.findByAula_Id(aula.getId())) {
+                if ("AGENDADO".equals(aulaAluno.getStatus()) || "REPOSICAO".equals(aulaAluno.getStatus())) {
+                    aulaAluno.setStatus("CANCELADA");
+                    aulaAlunoRepository.save(aulaAluno);
+                }
+            }
+        }
     }
 
     public Turma buscarPorId(Integer id) {

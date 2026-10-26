@@ -27,4 +27,6 @@ public interface AlunoTurmaRepository extends JpaRepository<AlunoTurma,Integer> 
     List<Object[]> countMatriculadosPorTurma();
 
     List<AlunoTurma> findByAlunoIdAndAtivoTrue(Integer id);
+
+    List<AlunoTurma> findAllByTurmaIdAndAtivoTrue(Integer turmaId);
 }
