@@ -27,7 +27,7 @@ public class GeracaoSemanalDatasAulaStrategy implements GeracaoDatasAulaStrategy
 
     private LocalDate proximaDataDaTurma(Turma turma, LocalDate dataReferencia) {
         DayOfWeek diaSemanaTurma = paraDayOfWeek(turma.getDiaSemana());
-        LocalDate diaTurma = dataReferencia.plusDays(1);
+        LocalDate diaTurma = dataReferencia;
 
         while (diaTurma.getDayOfWeek() != diaSemanaTurma) {
             diaTurma = diaTurma.plusDays(1);
