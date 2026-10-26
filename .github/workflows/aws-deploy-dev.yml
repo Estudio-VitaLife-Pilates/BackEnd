@@ -3,6 +3,7 @@ name: Deploy to Amazon ECR and EC2
 on:
   push:
     branches: ["develop"]
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
@@ -53,6 +54,10 @@ jobs:
       - name: Deploy to the app instance through Systems Manager
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          SMSGO_API_KEY: ${{ secrets.SMSGO_API_KEY }}
+          LEMBRETE_CANAL: ${{ vars.LEMBRETE_CANAL }}
+          LEMBRETE_ANTECEDENCIA_HORAS: ${{ vars.LEMBRETE_ANTECEDENCIA_HORAS }}
+          LEMBRETE_INTERVALO_MINUTOS: ${{ vars.LEMBRETE_INTERVALO_MINUTOS }}
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=InstanciaApp-01" "Name=instance-state-name,Values=running" \
@@ -62,6 +67,28 @@ jobs:
           if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
             echo "The running app instance was not found." >&2
             exit 1
+          fi
+
+          # Reminder/SMS settings come from the GitHub environment (secret SMSGO_API_KEY and
+          # optional variables). They are written to extra.env on the instance only when the
+          # secret exists, so a deploy without it never wipes what is already configured there.
+          WRITE_EXTRA_ENV=""
+          if [ -n "$SMSGO_API_KEY" ]; then
+            for value in "$SMSGO_API_KEY" "$LEMBRETE_CANAL" "$LEMBRETE_ANTECEDENCIA_HORAS" "$LEMBRETE_INTERVALO_MINUTOS"; do
+              if ! printf '%s\n' "$value" | grep -qE '^[A-Za-z0-9._:/@+-]*$'; then
+                echo "Invalid character in the SMS/reminder secret or variables (letters, digits and . _ : / @ + - only)." >&2
+                exit 1
+              fi
+            done
+            EXTRA_ENV=$(printf 'SMSGO_API_KEY=%s\nLEMBRETE_CANAL=%s' "$SMSGO_API_KEY" "${LEMBRETE_CANAL:-sms}")
+            if [ -n "$LEMBRETE_ANTECEDENCIA_HORAS" ]; then
+              EXTRA_ENV=$(printf '%s\nLEMBRETE_ANTECEDENCIA_HORAS=%s' "$EXTRA_ENV" "$LEMBRETE_ANTECEDENCIA_HORAS")
+            fi
+            if [ -n "$LEMBRETE_INTERVALO_MINUTOS" ]; then
+              EXTRA_ENV=$(printf '%s\nLEMBRETE_INTERVALO_MINUTOS=%s' "$EXTRA_ENV" "$LEMBRETE_INTERVALO_MINUTOS")
+            fi
+            EXTRA_ENV_B64=$(printf '%s\n' "$EXTRA_ENV" | base64 -w0)
+            WRITE_EXTRA_ENV="install -d -m 750 /opt/infra-pilates/backend && (umask 077 && printf '%s' '$EXTRA_ENV_B64' | base64 --decode > /opt/infra-pilates/backend/extra.env)"
           fi
 
           SSM_COMMAND=$(cat <<EOF
@@ -74,6 +101,7 @@ jobs:
             sed -i 's/\r$//' /tmp/infra-pilates-app-bootstrap.sh
             bash /tmp/infra-pilates-app-bootstrap.sh
           fi
+          $WRITE_EXTRA_ENV
           /usr/local/bin/deploy-backend "$IMAGE_TAG"
           EOF
           )
