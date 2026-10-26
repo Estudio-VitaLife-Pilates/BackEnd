@@ -7,4 +7,4 @@ set -eu
 : "${JWT_SECRET:?JWT_SECRET must be set}"
 
 export DB_URL DB_USERNAME DB_PASSWORD JWT_SECRET
-exec java -jar /app/target/thais.almeida-0.0.1-SNAPSHOT.jar
+exec java -jar /app/app.jar
