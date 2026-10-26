@@ -63,6 +63,17 @@ public class AlunoService {
         Plano plano = planoRepository.findById(idPlano)
                 .orElseThrow(() -> new PlanoNaoEncontrado(""));
 
+        boolean jaTemEstePlanoAtivo = alunoPlanoRepository
+                .findByAtivoIsTrueAndAluno_Id(idAluno)
+                .stream()
+                .anyMatch(ap -> ap.getPlano().getId().equals(idPlano));
+
+        if (jaTemEstePlanoAtivo) {
+            throw new RuntimeException(
+                    aluno.getNome() + " já está vinculado(a) ao plano \"" + plano.getNome() + "\"."
+            );
+        }
+
         AlunoPlano alunoPlano = new AlunoPlano();
 
         alunoPlano.setAluno(aluno);
@@ -125,6 +136,12 @@ public class AlunoService {
             alunoTurmaRepository.save(matricula);
         }
 
+        List<AlunoPlano> planos = alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(id);
+        for (AlunoPlano alunoPlano : planos) {
+            alunoPlano.setAtivo(false);
+            alunoPlanoRepository.save(alunoPlano);
+        }
+
         List<AulaAluno> aulasDoAluno = aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(id);
         for (AulaAluno aulaAluno : aulasDoAluno) {
             boolean futuraOuHoje = !aulaAluno.getAula().getDataAula().isBefore(LocalDate.now());
@@ -139,5 +156,10 @@ public class AlunoService {
 
     public Page<Aluno> obterTodosPaginado(Pageable pageable) {
         return alunoRepository.findAll(pageable);
+    public void reativarPorId(Integer id) {
+        Aluno aluno = alunoRepository.findById(id)
+                .orElseThrow(() -> new AlunoNaoEncontrado("Aluno não encontrado"));
+        aluno.setAtivo(true);
+        alunoRepository.save(aluno);
     }
 }

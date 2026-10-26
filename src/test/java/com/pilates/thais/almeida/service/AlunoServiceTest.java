@@ -275,6 +275,37 @@ class AlunoServiceTest {
         Mockito.verify(alunoPlanoRepository, Mockito.never()).save(Mockito.any());
     }
 
+    @Test
+    @DisplayName("Deve lançar exceção ao associar aluno a um plano que ele já tem ativo")
+    void deveLancarExcecaoAoAssociarPlanoJaAtivo() {
+
+        // Given
+        Aluno aluno = new Aluno();
+        aluno.setId(1);
+        aluno.setNome("Ana Paula");
+
+        Plano plano = new Plano();
+        plano.setId(1);
+        plano.setNome("Plano Mensal");
+
+        AlunoPlano vinculoAtivo = new AlunoPlano();
+        vinculoAtivo.setPlano(plano);
+        vinculoAtivo.setAtivo(true);
+
+        // When
+        Mockito.when(alunoRepository.findById(1)).thenReturn(Optional.of(aluno));
+        Mockito.when(planoRepository.findById(1)).thenReturn(Optional.of(plano));
+        Mockito.when(alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(1)).thenReturn(List.of(vinculoAtivo));
+
+        // Then
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> {
+            service.associarPlano(1, 1);
+        });
+
+        Assertions.assertTrue(ex.getMessage().contains("já está vinculado"));
+        Mockito.verify(alunoPlanoRepository, Mockito.never()).save(Mockito.any());
+    }
+
     // -------------------- DELETE /alunos/planos/{idAluno}/{idPlano}/{idAlunoPlano}/desativar --------------------
 
     @Test
