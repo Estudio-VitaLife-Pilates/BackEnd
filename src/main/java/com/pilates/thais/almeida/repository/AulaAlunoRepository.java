@@ -49,4 +49,20 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
     @Query("UPDATE AulaAluno aa SET aa.status = 'REALIZADA' " +
             "WHERE aa.status = 'AGENDADO' AND aa.aula.dataAula < :hoje")
     int marcarAgendadosPassadosComoRealizados(@Param("hoje") LocalDate hoje);
+    @Query("SELECT aa FROM AulaAluno aa " +
+            "JOIN FETCH aa.aula a " +
+            "JOIN FETCH a.turma " +
+            "LEFT JOIN FETCH a.professor " +
+            "JOIN FETCH aa.aluno al " +
+            "WHERE aa.lembreteEnviado = false " +
+            "AND aa.status IN ('AGENDADO', 'REPOSICAO') " +
+            "AND a.marcada = true " +
+            "AND al.ativo = true " +
+            "AND a.dataAula BETWEEN :inicio AND :fim")
+    List<AulaAluno> buscarPendentesDeLembrete(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE AulaAluno aa SET aa.lembreteEnviado = true WHERE aa.id = :id")
+    void marcarLembreteEnviado(@Param("id") Integer id);
 }
