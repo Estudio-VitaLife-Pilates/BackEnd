@@ -13,6 +13,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class AulaService {
 
@@ -251,5 +254,16 @@ public class AulaService {
         aulaAluno.setStatus("REPOSICAO");
 
         return aulaAlunoRepository.save(aulaAluno);
+    }
+
+    public Page<AulaAluno> listarAulasDoAlunoPaginado(
+            Integer alunoId,
+            Pageable pageable
+    ) {
+        return aulaAlunoRepository
+                .findByAluno_IdOrderByAula_DataAulaAsc(
+                        alunoId,
+                        pageable
+                );
     }
 }

@@ -12,6 +12,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Repository
 public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
 
@@ -47,4 +50,9 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
     @Transactional
     @Query("UPDATE AulaAluno aa SET aa.lembreteEnviado = true WHERE aa.id = :id")
     void marcarLembreteEnviado(@Param("id") Integer id);
+
+    Page<AulaAluno> findByAluno_IdOrderByAula_DataAulaAsc(
+            Integer alunoId,
+            Pageable pageable
+    );
 }
