@@ -215,6 +215,13 @@ public class AulaService {
         aulaAlunoRepository.save(aulaAluno);
     }
 
+    public void marcarFaltaDoAluno(Integer aulaAlunoId) {
+        AulaAluno aulaAluno = aulaAlunoRepository.findById(aulaAlunoId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Registro de aula não encontrado"));
+        aulaAluno.setStatus("AUSENTE");
+        aulaAlunoRepository.save(aulaAluno);
+    }
+
     public AulaAluno registrarReposicao(Integer aulaDestinoId, Integer aulaOrigemId, Integer alunoId) {
         if (aulaDestinoId.equals(aulaOrigemId)) {
             throw new RuntimeException("A aula de destino não pode ser a mesma que a aula de origem.");

@@ -786,6 +786,30 @@ class AulaServiceTest {
     }
 
     @Test
+    @DisplayName("Deve marcar falta do aluno numa aula")
+    void deveMarcarFaltaDoAluno() {
+        AulaAluno aulaAluno = new AulaAluno();
+        aulaAluno.setId(1);
+        aulaAluno.setStatus("AGENDADO");
+
+        Mockito.when(aulaAlunoRepository.findById(1)).thenReturn(Optional.of(aulaAluno));
+
+        service.marcarFaltaDoAluno(1);
+
+        assertEquals("AUSENTE", aulaAluno.getStatus());
+        verify(aulaAlunoRepository).save(aulaAluno);
+    }
+
+    @Test
+    @DisplayName("Deve lançar AulaNaoEncontrada ao marcar falta de registro inexistente")
+    void deveLancarAulaNaoEncontradaAoMarcarFaltaDeRegistroInexistente() {
+        Mockito.when(aulaAlunoRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(AulaNaoEncontrada.class, () -> service.marcarFaltaDoAluno(1));
+        verify(aulaAlunoRepository, never()).save(any(AulaAluno.class));
+    }
+
+    @Test
     @DisplayName("Deve lançar AlunoNaoEncontrado ao registrar reposição de aluno inexistente")
     void deveLancarAlunoNaoEncontradoAoRegistrarReposicao() {
         Aula aulaDestino = new Aula();

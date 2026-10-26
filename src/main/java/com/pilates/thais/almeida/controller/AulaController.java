@@ -154,6 +154,13 @@ public class AulaController {
         return ResponseEntity.status(204).build();
     }
 
+    @Operation(summary = "Marcar falta do aluno", description = "Marca que o aluno faltou a uma aula, deixando-o pendente de reagendamento até que uma reposição seja registrada")
+    @PutMapping("/alunos/{aulaAlunoId}/ausente")
+    public ResponseEntity<Void> marcarFaltaDoAluno(@PathVariable Integer aulaAlunoId) {
+        aulaService.marcarFaltaDoAluno(aulaAlunoId);
+        return ResponseEntity.status(204).build();
+    }
+
     @Operation(summary = "Registrar reposicao", description = "Registra que um aluno vai repor uma aula perdida em outra aula")
     @PostMapping("/{aulaId}/reposicao")
     public ResponseEntity<AulaAlunoDetailsResponseDto> registrarReposicao(

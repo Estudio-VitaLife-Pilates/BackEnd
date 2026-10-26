@@ -68,7 +68,7 @@ public class MetricasService {
         long ativosInicioMes = alunoPlanoRepository.countAtivosNaData(inicioMes);
         long desmatriculadosMes = alunoPlanoRepository.countByAtivoFalseAndDataFimBetween(inicioMes, fimMes);
         double taxaSaidaMes = ativosInicioMes == 0 ? 0.0 : (double) desmatriculadosMes / ativosInicioMes;
-        double taxaRetencao = ativosInicioMes == 0 ? 0.0 : 1 - taxaSaidaMes;
+        double taxaRetencao = 1 - taxaSaidaMes;
 
         // sem histórico mensal de ocupação no schema atual: fica 0.0 até termos um snapshot por mês
         double variacaoOcupacaoMes = 0.0;
