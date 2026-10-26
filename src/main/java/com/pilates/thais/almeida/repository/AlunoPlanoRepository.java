@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface AlunoPlanoRepository  extends JpaRepository<AlunoPlano, Integer> {
     Optional<AlunoPlano> findByIdAndAluno_IdAndPlano_Id(Integer id, Integer alunoId, Integer planoId);
     List<AlunoPlano> findByAtivoIsTrueAndAluno_Id(Integer alunoId);
+    List<AlunoPlano> findByPlano_IdAndAtivoIsTrue(Integer planoId);
 
     long countByAtivoFalseAndDataFimBetween(LocalDate inicio, LocalDate fim);
 

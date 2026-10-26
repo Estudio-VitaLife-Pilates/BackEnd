@@ -68,7 +68,7 @@ public class MetricasService {
         long ativosInicioMes = alunoPlanoRepository.countAtivosNaData(inicioMes);
         long desmatriculadosMes = alunoPlanoRepository.countByAtivoFalseAndDataFimBetween(inicioMes, fimMes);
         double taxaSaidaMes = ativosInicioMes == 0 ? 0.0 : (double) desmatriculadosMes / ativosInicioMes;
-        double taxaRetencao = ativosInicioMes == 0 ? 0.0 : 1 - taxaSaidaMes;
+        double taxaRetencao = 1 - taxaSaidaMes;
 
         // sem histórico mensal de ocupação no schema atual: fica 0.0 até termos um snapshot por mês
         double variacaoOcupacaoMes = 0.0;
@@ -83,8 +83,8 @@ public class MetricasService {
         LocalDate fimMes = inicioMes.plusMonths(1).minusDays(1);
 
         long alunosParaReagendamento = aulaAlunoRepository.countAguardandoReagendamento();
-        long aulasCanceladasMes = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
-        long aulasRemarcadasMes = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REPOSICAO", inicioMes, fimMes);
+        long aulasCanceladasMes = aulaAlunoRepository.countFaltasNoPeriodo(inicioMes, fimMes);
+        long aulasRemarcadasMes = aulaAlunoRepository.countFaltasRemarcadasNoPeriodo(inicioMes, fimMes);
         long novosAlunosMes = alunoRepository.countByDataCadastroBetween(inicioMes, fimMes);
         long desmatriculasMes = alunoPlanoRepository.countByAtivoFalseAndDataFimBetween(inicioMes, fimMes);
 
@@ -157,12 +157,17 @@ public class MetricasService {
         LocalDate inicioMes = mes.atDay(1);
         LocalDate fimMes = mes.atEndOfMonth();
 
+        // "Realizadas de X programadas" é sobre as turmas (sessões) em si: quantas aconteceram
+        // de todas as que estavam no calendário nesse mês.
         long aulasRealizadas = aulaRepository.countByDataAulaBetweenAndMarcadaTrue(inicioMes, fimMes);
-        long aulasCanceladas = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
-        long aulasProgramadas = aulasRealizadas + aulasCanceladas;
-        long aulasRemarcadas = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REPOSICAO", inicioMes, fimMes);
+        long aulasProgramadas = aulasRealizadas + aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
 
-        double taxaRemarcacao = aulasProgramadas == 0 ? 0.0 : (double) aulasRemarcadas / aulasProgramadas;
+        // "Canceladas"/"Remarcadas" são sobre faltas de alunos individuais, não sobre a sessão
+        // inteira — por isso usam a mesma base da falta (status AUSENTE / reposição vinculada).
+        long aulasCanceladas = aulaAlunoRepository.countFaltasNoPeriodo(inicioMes, fimMes);
+        long aulasRemarcadas = aulaAlunoRepository.countFaltasRemarcadasNoPeriodo(inicioMes, fimMes);
+
+        double taxaRemarcacao = aulasCanceladas == 0 ? 0.0 : (double) aulasRemarcadas / aulasCanceladas;
 
         return new MetricasAulaResponseDto(aulasCanceladas, aulasRemarcadas, taxaRemarcacao,
                 aulasRealizadas, aulasProgramadas);
@@ -256,12 +261,13 @@ public class MetricasService {
 
     private AulaHojeResponseDto mapearAulaHoje(Aula aula) {
         Turma turma = aula.getTurma();
+        Integer turmaId = turma != null ? turma.getId() : null;
         LocalTime horaInicio = turma != null ? turma.getHoraInicio() : null;
         String turmaDiaSemana = turma != null && turma.getDiaSemana() != null ? turma.getDiaSemana().name() : null;
         String professorNome = aula.getProfessor() != null ? aula.getProfessor().getNome() : null;
         long totalAlunos = aula.getAlunos() == null ? 0 : aula.getAlunos().size();
 
-        return new AulaHojeResponseDto(aula.getId(), horaInicio, professorNome, turmaDiaSemana, totalAlunos);
+        return new AulaHojeResponseDto(aula.getId(), turmaId, horaInicio, professorNome, turmaDiaSemana, totalAlunos);
     }
 
     private LocalDate hoje() {

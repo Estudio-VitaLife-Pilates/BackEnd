@@ -147,11 +147,31 @@ public class AulaController {
         return ResponseEntity.ok(aulas);
     }
 
+    @Operation(summary = "Buscar aulas anteriores da turma", description = "Lista o histórico de ocorrências já realizadas de uma turma, da mais recente para a mais antiga")
+    @GetMapping("/turma/{turmaId}/anteriores")
+    public ResponseEntity<List<AulaResponseDto>> buscarAulasAnterioresDaTurma(@PathVariable Integer turmaId) {
+        List<AulaResponseDto> aulas = AulaMapper.toResponse(aulaService.listarAulasAnterioresDaTurma(turmaId));
+        return ResponseEntity.ok(aulas);
+    }
+
     @Operation(summary = "Cancelar aula de um aluno", description = "Marca uma aula agendada de um aluno como cancelada")
     @PutMapping("/alunos/{aulaAlunoId}/cancelar")
     public ResponseEntity<Void> cancelarAulaDoAluno(@PathVariable Integer aulaAlunoId) {
         aulaService.cancelarAulaDoAluno(aulaAlunoId);
         return ResponseEntity.status(204).build();
+    }
+
+    @Operation(summary = "Marcar falta do aluno", description = "Marca que o aluno faltou a uma aula, deixando-o pendente de reagendamento até que uma reposição seja registrada")
+    @PutMapping("/alunos/{aulaAlunoId}/ausente")
+    public ResponseEntity<Void> marcarFaltaDoAluno(@PathVariable Integer aulaAlunoId) {
+        aulaService.marcarFaltaDoAluno(aulaAlunoId);
+        return ResponseEntity.status(204).build();
+    }
+
+    @Operation(summary = "Alunos aguardando reagendamento", description = "Lista os IDs dos alunos com faltas que ainda nao foram remarcadas")
+    @GetMapping("/alunos/aguardando-reagendamento")
+    public ResponseEntity<List<Integer>> listarAlunosAguardandoReagendamento() {
+        return ResponseEntity.ok(aulaService.listarAlunosAguardandoReagendamento());
     }
 
     @Operation(summary = "Registrar reposicao", description = "Registra que um aluno vai repor uma aula perdida em outra aula")

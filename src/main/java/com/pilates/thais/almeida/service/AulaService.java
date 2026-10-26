@@ -52,7 +52,6 @@ public class AulaService {
 
         aula.setTurma(turma);
         aula.setProfessor(professor);
-        aula.setDataAula(LocalDate.now());
         aula.setMarcada(true);
 
         return aulaRepository.save(aula);
@@ -157,6 +156,10 @@ public class AulaService {
                 .sorted(Comparator.comparing(Aula::getDataAula))
                 .toList();
     }
+
+    public List<Aula> listarAulasAnterioresDaTurma(Integer turmaId) {
+        return aulaRepository.findAllByDataAulaBeforeAndTurma_IdOrderByDataAulaDesc(LocalDate.now(), turmaId);
+    }
     public Aula buscarOuCriarProximaAulaDaTurma(Integer turmaId) {
         Aula aulaExistente = buscarProximaAulaDaTurma(turmaId);
         if (aulaExistente != null) {
@@ -216,7 +219,26 @@ public class AulaService {
         aulaAlunoRepository.save(aulaAluno);
     }
 
+    public List<Integer> listarAlunosAguardandoReagendamento() {
+        return aulaAlunoRepository.findAlunoIdsAguardandoReagendamento();
+    }
+
+    public int sincronizarPresencas() {
+        return aulaAlunoRepository.marcarAgendadosPassadosComoRealizados(LocalDate.now());
+    }
+
+    public void marcarFaltaDoAluno(Integer aulaAlunoId) {
+        AulaAluno aulaAluno = aulaAlunoRepository.findById(aulaAlunoId)
+                .orElseThrow(() -> new AulaNaoEncontrada("Registro de aula não encontrado"));
+        aulaAluno.setStatus("AUSENTE");
+        aulaAlunoRepository.save(aulaAluno);
+    }
+
     public AulaAluno registrarReposicao(Integer aulaDestinoId, Integer aulaOrigemId, Integer alunoId) {
+        if (aulaDestinoId.equals(aulaOrigemId)) {
+            throw new RuntimeException("A aula de destino não pode ser a mesma que a aula de origem.");
+        }
+
         Aula aulaDestino = aulaRepository.findById(aulaDestinoId)
                 .orElseThrow(() -> new AulaNaoEncontrada("Aula de destino não encontrada"));
         Aula aulaOrigem = aulaRepository.findById(aulaOrigemId)
@@ -236,11 +258,10 @@ public class AulaService {
         }
 
 
-        aulaAlunoRepository.findByAula_IdAndAluno_Id(aulaOrigemId, alunoId)
-                .ifPresent(aulaAlunoOrigem -> {
-                    aulaAlunoOrigem.setStatus("CANCELADA");
-                    aulaAlunoRepository.save(aulaAlunoOrigem);
-                });
+        AulaAluno aulaAlunoOrigem = aulaAlunoRepository.findByAula_IdAndAluno_Id(aulaOrigemId, alunoId)
+                .orElseThrow(() -> new RuntimeException("Essa aula de origem não pertence ao aluno informado."));
+        aulaAlunoOrigem.setStatus("CANCELADA");
+        aulaAlunoRepository.save(aulaAlunoOrigem);
 
         AulaAluno aulaAluno = new AulaAluno();
         aulaAluno.setAula(aulaDestino);

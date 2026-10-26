@@ -4,6 +4,7 @@ import java.time.LocalTime;
 
 public class AulaHojeResponseDto {
     private Integer id;
+    private Integer turmaId;
     private LocalTime horaInicio;
     private String professorNome;
     private String turmaDiaSemana;
@@ -12,13 +13,22 @@ public class AulaHojeResponseDto {
     public AulaHojeResponseDto() {
     }
 
-    public AulaHojeResponseDto(Integer id, LocalTime horaInicio, String professorNome,
+    public AulaHojeResponseDto(Integer id, Integer turmaId, LocalTime horaInicio, String professorNome,
                                String turmaDiaSemana, Long totalAlunos) {
         this.id = id;
+        this.turmaId = turmaId;
         this.horaInicio = horaInicio;
         this.professorNome = professorNome;
         this.turmaDiaSemana = turmaDiaSemana;
         this.totalAlunos = totalAlunos;
+    }
+
+    public Integer getTurmaId() {
+        return turmaId;
+    }
+
+    public void setTurmaId(Integer turmaId) {
+        this.turmaId = turmaId;
     }
 
     public Integer getId() {

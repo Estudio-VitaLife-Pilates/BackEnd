@@ -1,7 +1,9 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.entity.Professor;
+import com.pilates.thais.almeida.entity.Turma;
 import com.pilates.thais.almeida.repository.ProfessorRepository;
+import com.pilates.thais.almeida.repository.TurmaRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,9 @@ class ProfessorServiceTest {
 
     @Mock
     private ProfessorRepository repository;
+
+    @Mock
+    private TurmaRepository turmaRepository;
 
     @InjectMocks
     private ProfessorService service;
@@ -119,6 +124,36 @@ class ProfessorServiceTest {
     }
 
     @Test
+    @DisplayName("Deve desativar em cascata as turmas ativas do professor inativado")
+    void inativarDesativaTurmasDoProfessor() {
+
+        // Given
+        Professor professor = new Professor(1, "Thais", "(11)123456789", true, "thais@gmail.com");
+
+        Turma turma1 = new Turma();
+        turma1.setId(10);
+        turma1.setAtiva(true);
+
+        Turma turma2 = new Turma();
+        turma2.setId(11);
+        turma2.setAtiva(true);
+
+        // When
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(professor));
+        Mockito.when(turmaRepository.findByProfessor_IdAndAtivaTrue(1)).thenReturn(List.of(turma1, turma2));
+
+        service.inativar(1);
+
+        // Then
+        Assertions.assertFalse(turma1.getAtiva());
+        Assertions.assertFalse(turma2.getAtiva());
+
+        Mockito.verify(turmaRepository, Mockito.times(1)).findByProfessor_IdAndAtivaTrue(1);
+        Mockito.verify(turmaRepository, Mockito.times(1)).save(turma1);
+        Mockito.verify(turmaRepository, Mockito.times(1)).save(turma2);
+    }
+
+    @Test
     @DisplayName("Deve lançar exceção ao tentar inativar professor inexistente")
     void deveLancarExcecaoAoInativarProfessorInexistente() {
 
@@ -204,5 +239,45 @@ class ProfessorServiceTest {
         Mockito.verify(repository, Mockito.times(1)).findById(1);
 
         Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao editar professor com e-mail de outro professor já cadastrado")
+    void deveLancarExcecaoAoEditarComEmailDuplicado() {
+
+        // Given
+        Professor existente = new Professor(1, "Thais", "(11)111111111", true, "thais@gmail.com");
+        Professor atualizado = new Professor(1, "Thais", "(11)111111111", true, "marcos@gmail.com");
+
+        // When
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(existente));
+        Mockito.when(repository.existsByEmailAndIdNot("marcos@gmail.com", 1)).thenReturn(true);
+
+        // Then
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            service.editar(atualizado, 1);
+        });
+
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Deve permitir editar professor mantendo o próprio e-mail")
+    void devePermitirEditarMantendoProprioEmail() {
+
+        // Given
+        Professor existente = new Professor(1, "Thais", "(11)111111111", true, "thais@gmail.com");
+        Professor atualizado = new Professor(1, "Thais Almeida", "(11)999999999", true, "thais@gmail.com");
+
+        // When
+        Mockito.when(repository.findById(1)).thenReturn(Optional.of(existente));
+        Mockito.when(repository.existsByEmailAndIdNot("thais@gmail.com", 1)).thenReturn(false);
+        Mockito.when(repository.save(Mockito.any())).thenReturn(existente);
+
+        Professor resultado = service.editar(atualizado, 1);
+
+        // Then
+        Assertions.assertNotNull(resultado);
+        Mockito.verify(repository, Mockito.times(1)).save(existente);
     }
 }

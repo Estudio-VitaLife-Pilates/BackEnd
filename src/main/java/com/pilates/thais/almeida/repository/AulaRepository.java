@@ -21,6 +21,8 @@ public interface AulaRepository extends JpaRepository<Aula, Integer> {
 
     List<Aula> findAllByDataAulaAfterAndTurma_Id(LocalDate dataAulaAfter, Integer turmaId);
 
+    List<Aula> findAllByDataAulaBeforeAndTurma_IdOrderByDataAulaDesc(LocalDate dataAulaBefore, Integer turmaId);
+
     Optional<Aula> findFirstByTurma_IdAndDataAulaGreaterThanEqualOrderByDataAulaAsc(Integer turmaId, LocalDate data);
 
     long countByDataAulaBetweenAndMarcadaTrue(LocalDate inicio, LocalDate fim);
