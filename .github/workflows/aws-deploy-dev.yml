@@ -34,6 +34,16 @@ jobs:
         run: |
           aws sts get-caller-identity
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build backend JAR
+        run: bash ./mvnw --batch-mode clean package -DskipTests
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -64,6 +74,21 @@ jobs:
             exit 1
           fi
 
+          DATABASE_HOST=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=InstanciaBD-01" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[].PrivateIpAddress" \
+            --output text)
+
+          if [ -z "$DATABASE_HOST" ] || [ "$DATABASE_HOST" = "None" ] || [[ "$DATABASE_HOST" == *[[:space:]]* ]]; then
+            echo "Expected exactly one running database instance with a private IP." >&2
+            exit 1
+          fi
+
+          if ! [[ "$DATABASE_HOST" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+            echo "The database instance returned an invalid private IPv4 address." >&2
+            exit 1
+          fi
+
           SSM_COMMAND=$(cat <<EOF
           set -e
           if [ ! -x /usr/local/bin/deploy-backend ] || [ ! -s /opt/infra-pilates/backend/compose.yml ]; then
@@ -74,7 +99,7 @@ jobs:
             sed -i 's/\r$//' /tmp/infra-pilates-app-bootstrap.sh
             bash /tmp/infra-pilates-app-bootstrap.sh
           fi
-          /usr/local/bin/deploy-backend "$IMAGE_TAG"
+          /usr/local/bin/deploy-backend "$IMAGE_TAG" "$DATABASE_HOST"
           EOF
           )
 
