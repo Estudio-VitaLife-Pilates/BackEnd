@@ -95,6 +95,10 @@ public class AlunoService {
                 .orElseThrow(() -> new AlunoPlanoNaoEncontrado(""));
 
         alunoPlano.setAtivo(false);
+        LocalDate hoje = LocalDate.now();
+        if (alunoPlano.getDataFim() == null || alunoPlano.getDataFim().isAfter(hoje)) {
+            alunoPlano.setDataFim(hoje);
+        }
 
         alunoPlanoRepository.save(alunoPlano);
     }
@@ -137,8 +141,12 @@ public class AlunoService {
         }
 
         List<AlunoPlano> planos = alunoPlanoRepository.findByAtivoIsTrueAndAluno_Id(id);
+        LocalDate hoje = LocalDate.now();
         for (AlunoPlano alunoPlano : planos) {
             alunoPlano.setAtivo(false);
+            if (alunoPlano.getDataFim() == null || alunoPlano.getDataFim().isAfter(hoje)) {
+                alunoPlano.setDataFim(hoje);
+            }
             alunoPlanoRepository.save(alunoPlano);
         }
 

@@ -210,14 +210,15 @@ public class MetricasService {
             long total = (Long) linha[2];
 
             long[] contadores = porMes.get(mes);
-            if (contadores == null) {
+            if (contadores == null || !marcada) {
                 continue;
             }
-            if (marcada) {
-                contadores[0] += total;
-            } else {
-                contadores[1] += total;
-            }
+            contadores[0] += total;
+        }
+
+        for (Map.Entry<String, long[]> entrada : porMes.entrySet()) {
+            YearMonth mes = YearMonth.parse(entrada.getKey());
+            entrada.getValue()[1] = aulaAlunoRepository.countFaltasNoPeriodo(mes.atDay(1), mes.atEndOfMonth());
         }
 
         List<DesempenhoMensalResponseDto> resultado = new ArrayList<>();
@@ -236,7 +237,7 @@ public class MetricasService {
             LocalDate fim = inicio.plusDays(6);
 
             long realizadas = aulaRepository.countByDataAulaBetweenAndMarcadaTrue(inicio, fim);
-            long canceladas = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicio, fim);
+            long canceladas = aulaAlunoRepository.countFaltasNoPeriodo(inicio, fim);
 
             resultado.add(new DesempenhoMensalResponseDto(inicio.toString(), realizadas, canceladas));
         }
