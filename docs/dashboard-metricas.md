@@ -115,3 +115,14 @@ Ambas usam a mesma relação que `countAguardandoReagendamento()` já usava (`Au
 
 1. **Marcar falta** (`AulaAluno.status = 'AUSENTE'`) — implementado em `feature/marcar-falta-aluno` (endpoint `PUT /aulas/alunos/{id}/ausente` + botão em `TurmaEspecifica`). Antes dessa branch, nada no sistema definia esse status, então `alunosParaReagendamento`, `aulasCanceladasMes` e `aulasRemarcadas` ficavam sempre em 0.
 2. **Desativar aula inteira** (`Aula.marcada = false`, endpoint `PUT /aulas/{id}/desativar`) — existe no backend desde sempre, mas **não tem nenhum botão no frontend**. Isso significa que `aulasCanceladasSemana` (KPI "aulas esta semana"), a série "Canceladas" do gráfico de desempenho, e `aulasProgramadas` do card "Métricas de aulas" também tendem a ficar sempre artificialmente baixos/zerados na prática, mesmo sem ser um bug de cálculo — é simplesmente um recurso que o studio não tem como acionar pela tela ainda.
+
+## Status `REALIZADA`: presença confirmada por padrão
+
+Até aqui, `AulaAluno.status` ficava em `AGENDADO` para sempre depois que a data da aula passava, a menos que alguém tomasse uma ação manual (marcar falta, cancelar, remarcar). Não havia como saber, olhando o status, se o aluno realmente compareceu ou se simplesmente ninguém mexeu no registro.
+
+Agora existe um quinto status, `REALIZADA` ("presença confirmada"), e um job (`PresencaScheduler`, roda uma vez ao iniciar a aplicação e todo dia à 00:05) que varre `AulaAluno` com `status = 'AGENDADO'` e `aula.dataAula < hoje`, e marca como `REALIZADA` — presença é o padrão assumido quando ninguém registrou uma falta/cancelamento/reposição.
+
+Pontos importantes:
+- A correção continua possível depois do fato: o botão "Marcar falta" em `TurmaEspecifica` aceita tanto `AGENDADO` quanto `REALIZADA` como estado de partida, então dá pra reverter um "presença assumida" pra "ausente" mesmo depois do job já ter rodado.
+- `REALIZADA` conta como ocupante normal em `countOcupantesAtivosDaAula` (mesma regra de antes: tudo que não é `CANCELADA` ocupa vaga) e não interfere nas queries de falta/reagendamento (que olham especificamente para `AUSENTE`).
+- Isso é um status por **aluno**, independente do `Aula.marcada` (sessão inteira) usado pelo KPI "aulas realizadas" — os dois não são a mesma coisa, ver nota do item 2 acima.
