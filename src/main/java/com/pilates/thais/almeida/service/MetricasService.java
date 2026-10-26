@@ -157,12 +157,17 @@ public class MetricasService {
         LocalDate inicioMes = mes.atDay(1);
         LocalDate fimMes = mes.atEndOfMonth();
 
+        // "Realizadas de X programadas" é sobre as turmas (sessões) em si: quantas aconteceram
+        // de todas as que estavam no calendário nesse mês.
         long aulasRealizadas = aulaRepository.countByDataAulaBetweenAndMarcadaTrue(inicioMes, fimMes);
-        long aulasCanceladas = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
-        long aulasProgramadas = aulasRealizadas + aulasCanceladas;
-        long aulasRemarcadas = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REPOSICAO", inicioMes, fimMes);
+        long aulasProgramadas = aulasRealizadas + aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
 
-        double taxaRemarcacao = aulasProgramadas == 0 ? 0.0 : (double) aulasRemarcadas / aulasProgramadas;
+        // "Canceladas"/"Remarcadas" são sobre faltas de alunos individuais, não sobre a sessão
+        // inteira — por isso usam a mesma base da falta (status AUSENTE / reposição vinculada).
+        long aulasCanceladas = aulaAlunoRepository.countFaltasNoPeriodo(inicioMes, fimMes);
+        long aulasRemarcadas = aulaAlunoRepository.countFaltasRemarcadasNoPeriodo(inicioMes, fimMes);
+
+        double taxaRemarcacao = aulasCanceladas == 0 ? 0.0 : (double) aulasRemarcadas / aulasCanceladas;
 
         return new MetricasAulaResponseDto(aulasCanceladas, aulasRemarcadas, taxaRemarcacao,
                 aulasRealizadas, aulasProgramadas);
