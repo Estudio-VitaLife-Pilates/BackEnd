@@ -796,6 +796,18 @@ class AulaServiceTest {
     }
 
     @Test
+    @DisplayName("Deve sincronizar presencas marcando agendados do passado como realizados")
+    void deveSincronizarPresencas() {
+        Mockito.when(aulaAlunoRepository.marcarAgendadosPassadosComoRealizados(Mockito.any(LocalDate.class)))
+                .thenReturn(3);
+
+        int resultado = service.sincronizarPresencas();
+
+        assertEquals(3, resultado);
+        verify(aulaAlunoRepository).marcarAgendadosPassadosComoRealizados(Mockito.any(LocalDate.class));
+    }
+
+    @Test
     @DisplayName("Deve marcar falta do aluno numa aula")
     void deveMarcarFaltaDoAluno() {
         AulaAluno aulaAluno = new AulaAluno();

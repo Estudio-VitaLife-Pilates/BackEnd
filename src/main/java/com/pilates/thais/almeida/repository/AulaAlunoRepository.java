@@ -2,9 +2,11 @@ package com.pilates.thais.almeida.repository;
 
 import com.pilates.thais.almeida.entity.AulaAluno;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,4 +43,10 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
     long countByStatusAndAula_DataAulaBetween(String status, LocalDate inicio, LocalDate fim);
 
     Optional<AulaAluno> findByAula_IdAndAluno_Id(Integer id, Integer alunoId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE AulaAluno aa SET aa.status = 'REALIZADA' " +
+            "WHERE aa.status = 'AGENDADO' AND aa.aula.dataAula < :hoje")
+    int marcarAgendadosPassadosComoRealizados(@Param("hoje") LocalDate hoje);
 }
