@@ -796,6 +796,25 @@ class AulaServiceTest {
     }
 
     @Test
+    @DisplayName("Deve listar as aulas anteriores da turma da mais recente para a mais antiga")
+    void deveListarAulasAnterioresDaTurma() {
+        Aula aula1 = new Aula();
+        aula1.setDataAula(LocalDate.of(2026, 10, 1));
+
+        Aula aula2 = new Aula();
+        aula2.setDataAula(LocalDate.of(2026, 10, 15));
+
+        Mockito.when(repository.findAllByDataAulaBeforeAndTurma_IdOrderByDataAulaDesc(Mockito.any(LocalDate.class), Mockito.eq(1)))
+                .thenReturn(List.of(aula2, aula1));
+
+        List<Aula> resultado = service.listarAulasAnterioresDaTurma(1);
+
+        assertEquals(2, resultado.size());
+        assertEquals(aula2, resultado.get(0));
+        assertEquals(aula1, resultado.get(1));
+    }
+
+    @Test
     @DisplayName("Deve sincronizar presencas marcando agendados do passado como realizados")
     void deveSincronizarPresencas() {
         Mockito.when(aulaAlunoRepository.marcarAgendadosPassadosComoRealizados(Mockito.any(LocalDate.class)))

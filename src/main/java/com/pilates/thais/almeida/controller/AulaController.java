@@ -147,6 +147,13 @@ public class AulaController {
         return ResponseEntity.ok(aulas);
     }
 
+    @Operation(summary = "Buscar aulas anteriores da turma", description = "Lista o histórico de ocorrências já realizadas de uma turma, da mais recente para a mais antiga")
+    @GetMapping("/turma/{turmaId}/anteriores")
+    public ResponseEntity<List<AulaResponseDto>> buscarAulasAnterioresDaTurma(@PathVariable Integer turmaId) {
+        List<AulaResponseDto> aulas = AulaMapper.toResponse(aulaService.listarAulasAnterioresDaTurma(turmaId));
+        return ResponseEntity.ok(aulas);
+    }
+
     @Operation(summary = "Cancelar aula de um aluno", description = "Marca uma aula agendada de um aluno como cancelada")
     @PutMapping("/alunos/{aulaAlunoId}/cancelar")
     public ResponseEntity<Void> cancelarAulaDoAluno(@PathVariable Integer aulaAlunoId) {

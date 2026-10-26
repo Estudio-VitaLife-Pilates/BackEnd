@@ -156,6 +156,10 @@ public class AulaService {
                 .sorted(Comparator.comparing(Aula::getDataAula))
                 .toList();
     }
+
+    public List<Aula> listarAulasAnterioresDaTurma(Integer turmaId) {
+        return aulaRepository.findAllByDataAulaBeforeAndTurma_IdOrderByDataAulaDesc(LocalDate.now(), turmaId);
+    }
     public Aula buscarOuCriarProximaAulaDaTurma(Integer turmaId) {
         Aula aulaExistente = buscarProximaAulaDaTurma(turmaId);
         if (aulaExistente != null) {
