@@ -161,6 +161,12 @@ public class AulaController {
         return ResponseEntity.status(204).build();
     }
 
+    @Operation(summary = "Alunos aguardando reagendamento", description = "Lista os IDs dos alunos com faltas que ainda nao foram remarcadas")
+    @GetMapping("/alunos/aguardando-reagendamento")
+    public ResponseEntity<List<Integer>> listarAlunosAguardandoReagendamento() {
+        return ResponseEntity.ok(aulaService.listarAlunosAguardandoReagendamento());
+    }
+
     @Operation(summary = "Registrar reposicao", description = "Registra que um aluno vai repor uma aula perdida em outra aula")
     @PostMapping("/{aulaId}/reposicao")
     public ResponseEntity<AulaAlunoDetailsResponseDto> registrarReposicao(

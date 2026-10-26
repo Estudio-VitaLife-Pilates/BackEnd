@@ -786,6 +786,16 @@ class AulaServiceTest {
     }
 
     @Test
+    @DisplayName("Deve listar os ids dos alunos aguardando reagendamento")
+    void deveListarAlunosAguardandoReagendamento() {
+        Mockito.when(aulaAlunoRepository.findAlunoIdsAguardandoReagendamento()).thenReturn(List.of(1, 3));
+
+        List<Integer> resultado = service.listarAlunosAguardandoReagendamento();
+
+        assertEquals(List.of(1, 3), resultado);
+    }
+
+    @Test
     @DisplayName("Deve marcar falta do aluno numa aula")
     void deveMarcarFaltaDoAluno() {
         AulaAluno aulaAluno = new AulaAluno();

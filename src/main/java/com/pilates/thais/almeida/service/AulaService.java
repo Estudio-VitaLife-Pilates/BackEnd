@@ -215,6 +215,10 @@ public class AulaService {
         aulaAlunoRepository.save(aulaAluno);
     }
 
+    public List<Integer> listarAlunosAguardandoReagendamento() {
+        return aulaAlunoRepository.findAlunoIdsAguardandoReagendamento();
+    }
+
     public void marcarFaltaDoAluno(Integer aulaAlunoId) {
         AulaAluno aulaAluno = aulaAlunoRepository.findById(aulaAlunoId)
                 .orElseThrow(() -> new AulaNaoEncontrada("Registro de aula não encontrado"));

@@ -22,6 +22,10 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
             "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")
     long countAguardandoReagendamento();
 
+    @Query("SELECT DISTINCT aa.aluno.id FROM AulaAluno aa WHERE aa.status = 'AUSENTE' " +
+            "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")
+    List<Integer> findAlunoIdsAguardandoReagendamento();
+
     @Query("SELECT COUNT(aa) FROM AulaAluno aa WHERE aa.aula.dataAula BETWEEN :inicio AND :fim " +
             "AND (aa.status = 'AUSENTE' " +
             "OR EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO'))")
