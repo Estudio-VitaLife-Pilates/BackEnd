@@ -156,6 +156,8 @@ public class AlunoService {
 
     public Page<Aluno> obterTodosPaginado(Pageable pageable) {
         return alunoRepository.findAll(pageable);
+    }
+
     public void reativarPorId(Integer id) {
         Aluno aluno = alunoRepository.findById(id)
                 .orElseThrow(() -> new AlunoNaoEncontrado("Aluno não encontrado"));
