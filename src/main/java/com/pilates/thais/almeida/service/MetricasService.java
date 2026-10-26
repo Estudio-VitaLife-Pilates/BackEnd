@@ -83,8 +83,8 @@ public class MetricasService {
         LocalDate fimMes = inicioMes.plusMonths(1).minusDays(1);
 
         long alunosParaReagendamento = aulaAlunoRepository.countAguardandoReagendamento();
-        long aulasCanceladasMes = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
-        long aulasRemarcadasMes = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REPOSICAO", inicioMes, fimMes);
+        long aulasCanceladasMes = aulaAlunoRepository.countFaltasNoPeriodo(inicioMes, fimMes);
+        long aulasRemarcadasMes = aulaAlunoRepository.countFaltasRemarcadasNoPeriodo(inicioMes, fimMes);
         long novosAlunosMes = alunoRepository.countByDataCadastroBetween(inicioMes, fimMes);
         long desmatriculasMes = alunoPlanoRepository.countByAtivoFalseAndDataFimBetween(inicioMes, fimMes);
 
