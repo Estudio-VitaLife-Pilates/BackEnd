@@ -1,6 +1,8 @@
 package com.pilates.thais.almeida.repository;
 
 import com.pilates.thais.almeida.entity.AulaAluno;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +21,8 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
     boolean existsByAula_IdAndAluno_Id(Integer aulaId, Integer alunoId);
 
     List<AulaAluno> findByAluno_IdOrderByAula_DataAulaAsc(Integer alunoId);
+
+    Page<AulaAluno> findByAluno_Id(Integer alunoId, Pageable pageable);
 
     @Query("SELECT COUNT(aa) FROM AulaAluno aa WHERE aa.status = 'AUSENTE' " +
             "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")

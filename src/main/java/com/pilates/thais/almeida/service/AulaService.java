@@ -5,6 +5,8 @@ import com.pilates.thais.almeida.exceptions.AlunoNaoEncontrado;
 import com.pilates.thais.almeida.exceptions.AulaNaoEncontrada;
 import com.pilates.thais.almeida.exceptions.ProfessorNaoEncontrado;
 import com.pilates.thais.almeida.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -204,6 +206,10 @@ public class AulaService {
     }
     public List<AulaAluno> listarAulasDoAluno(Integer alunoId) {
         return aulaAlunoRepository.findByAluno_IdOrderByAula_DataAulaAsc(alunoId);
+    }
+
+    public Page<AulaAluno> listarAulasDoAlunoPaginado(Integer alunoId, Pageable pageable) {
+        return aulaAlunoRepository.findByAluno_Id(alunoId, pageable);
     }
     public Integer vagasDisponiveisNaAula(Integer aulaId) {
         Aula aula = aulaRepository.findById(aulaId)

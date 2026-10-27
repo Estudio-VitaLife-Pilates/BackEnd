@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Path;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -125,10 +128,17 @@ public class AulaController {
         aulaService.removerAlunoDaAula(aulaAlunoId);
         return ResponseEntity.status(204).build();
     }
-    @Operation(summary = "Listar aulas de um aluno", description = "Lista o historico de aulas (agendadas, canceladas, reposicoes) de um aluno")
+    @Operation(summary = "Listar aulas de um aluno", description = "Lista paginada do historico de aulas (agendadas, canceladas, reposicoes) de um aluno")
     @GetMapping("/aluno/{alunoId}")
-    public ResponseEntity<List<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(@PathVariable Integer alunoId) {
-        return ResponseEntity.ok(AulaMapper.toAlunoDetails(aulaService.listarAulasDoAluno(alunoId)));
+    public ResponseEntity<Page<AulaAlunoDetailsResponseDto>> listarAulasDoAluno(
+            @PathVariable Integer alunoId,
+            @PageableDefault(size = 10, sort = "aula.dataAula") Pageable pageable
+    ) {
+        Page<AulaAlunoDetailsResponseDto> pagina = aulaService
+                .listarAulasDoAlunoPaginado(alunoId, pageable)
+                .map(AulaMapper::toAlunoDetails);
+
+        return ResponseEntity.ok(pagina);
     }
     @Operation(summary = "Listar alunos de uma aula", description = "Lista os alunos (matriculados e em reposição) de uma aula específica")
     @GetMapping("/{aulaId}/alunos")
