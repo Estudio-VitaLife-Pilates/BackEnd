@@ -22,6 +22,13 @@ public class AlunoMapper {
         dto.setDataNascimento(entity.getDataNascimento());
         dto.setTelefone(entity.getTelefone());
         dto.setFichaAnamnese(entity.getFichaAnamnese());
+        dto.setVencimentoPlanoAtivo(
+                entity.getAlunoPlanos().stream()
+                        .filter(ap -> Boolean.TRUE.equals(ap.getAtivo()))
+                        .map(AlunoPlano::getDataFim)
+                        .findFirst()
+                        .orElse(null)
+        );
 
         return dto;
     }
