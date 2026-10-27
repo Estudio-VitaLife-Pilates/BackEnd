@@ -8,6 +8,8 @@ public class DashboardKpisResponseDto {
     private Long aulasSemana;
     private Long aulasCanceladasSemana;
     private Long aulasProgramadasSemana;
+    private Long turmasRealizadasSemana;
+    private Long turmasAgendadasSemana;
     private Double taxaRetencao;
     private Double taxaSaidaMes;
 
@@ -16,7 +18,8 @@ public class DashboardKpisResponseDto {
 
     public DashboardKpisResponseDto(Long totalAlunos, Long novosAlunosMes, Double taxaOcupacao,
                                    Double variacaoOcupacaoMes, Long aulasSemana, Long aulasCanceladasSemana,
-                                   Long aulasProgramadasSemana, Double taxaRetencao, Double taxaSaidaMes) {
+                                   Long aulasProgramadasSemana, Long turmasRealizadasSemana,
+                                   Long turmasAgendadasSemana, Double taxaRetencao, Double taxaSaidaMes) {
         this.totalAlunos = totalAlunos;
         this.novosAlunosMes = novosAlunosMes;
         this.taxaOcupacao = taxaOcupacao;
@@ -24,6 +27,8 @@ public class DashboardKpisResponseDto {
         this.aulasSemana = aulasSemana;
         this.aulasCanceladasSemana = aulasCanceladasSemana;
         this.aulasProgramadasSemana = aulasProgramadasSemana;
+        this.turmasRealizadasSemana = turmasRealizadasSemana;
+        this.turmasAgendadasSemana = turmasAgendadasSemana;
         this.taxaRetencao = taxaRetencao;
         this.taxaSaidaMes = taxaSaidaMes;
     }
@@ -82,6 +87,22 @@ public class DashboardKpisResponseDto {
 
     public void setAulasProgramadasSemana(Long aulasProgramadasSemana) {
         this.aulasProgramadasSemana = aulasProgramadasSemana;
+    }
+
+    public Long getTurmasRealizadasSemana() {
+        return turmasRealizadasSemana;
+    }
+
+    public void setTurmasRealizadasSemana(Long turmasRealizadasSemana) {
+        this.turmasRealizadasSemana = turmasRealizadasSemana;
+    }
+
+    public Long getTurmasAgendadasSemana() {
+        return turmasAgendadasSemana;
+    }
+
+    public void setTurmasAgendadasSemana(Long turmasAgendadasSemana) {
+        this.turmasAgendadasSemana = turmasAgendadasSemana;
     }
 
     public Double getTaxaRetencao() {

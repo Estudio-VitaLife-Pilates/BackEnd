@@ -21,12 +21,15 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class MetricasService {
@@ -63,6 +66,9 @@ public class MetricasService {
         long aulasCanceladasSemana = aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioSemana, fimSemana);
         long aulasSemana = aulasProgramadasSemana + aulasCanceladasSemana;
 
+        long turmasRealizadasSemana = contarTurmasComAulaJaEncerradaNoPeriodo(inicioSemana, fimSemana);
+        long turmasAgendadasSemana = aulaRepository.countDistinctTurmaByDataAulaBetweenAndMarcadaTrue(inicioSemana, fimSemana);
+
         double taxaOcupacao = calcularTaxaOcupacao();
 
         long ativosInicioMes = alunoPlanoRepository.countAtivosNaData(inicioMes);
@@ -74,7 +80,27 @@ public class MetricasService {
         double variacaoOcupacaoMes = 0.0;
 
         return new DashboardKpisResponseDto(totalAlunos, novosAlunosMes, taxaOcupacao, variacaoOcupacaoMes,
-                aulasSemana, aulasCanceladasSemana, aulasProgramadasSemana, taxaRetencao, taxaSaidaMes);
+                aulasSemana, aulasCanceladasSemana, aulasProgramadasSemana, turmasRealizadasSemana,
+                turmasAgendadasSemana, taxaRetencao, taxaSaidaMes);
+    }
+
+    private long contarTurmasComAulaJaEncerradaNoPeriodo(LocalDate inicio, LocalDate fim) {
+        LocalDateTime agora = LocalDateTime.now();
+
+        Set<Integer> turmasComAulaEncerrada = aulaRepository.findAllByDataAulaBetween(inicio, fim).stream()
+                .filter(Aula::getMarcada)
+                .filter(aula -> aula.getTurma() != null)
+                .filter(aula -> {
+                    Turma turma = aula.getTurma();
+                    LocalTime horaInicio = turma.getHoraInicio();
+                    int duracao = turma.getDuracaoMinutos() != null ? turma.getDuracaoMinutos() : 50;
+                    LocalDateTime fimDaAula = LocalDateTime.of(aula.getDataAula(), horaInicio).plusMinutes(duracao);
+                    return !fimDaAula.isAfter(agora);
+                })
+                .map(aula -> aula.getTurma().getId())
+                .collect(Collectors.toSet());
+
+        return turmasComAulaEncerrada.size();
     }
 
     public DashboardAlertaResponseDto obterAlertas() {

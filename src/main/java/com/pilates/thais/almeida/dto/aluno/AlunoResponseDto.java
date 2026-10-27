@@ -19,6 +19,7 @@ public class AlunoResponseDto {
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
     private String fichaAnamnese;
+    private LocalDate vencimentoPlanoAtivo;
 
     public Integer getId() {
         return id;
@@ -90,5 +91,13 @@ public class AlunoResponseDto {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public LocalDate getVencimentoPlanoAtivo() {
+        return vencimentoPlanoAtivo;
+    }
+
+    public void setVencimentoPlanoAtivo(LocalDate vencimentoPlanoAtivo) {
+        this.vencimentoPlanoAtivo = vencimentoPlanoAtivo;
     }
 }

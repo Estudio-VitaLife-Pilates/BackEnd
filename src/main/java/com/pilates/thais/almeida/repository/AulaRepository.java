@@ -27,6 +27,9 @@ public interface AulaRepository extends JpaRepository<Aula, Integer> {
 
     long countByDataAulaBetweenAndMarcadaTrue(LocalDate inicio, LocalDate fim);
 
+    @Query("SELECT COUNT(DISTINCT a.turma.id) FROM Aula a WHERE a.dataAula BETWEEN :inicio AND :fim AND a.marcada = true")
+    long countDistinctTurmaByDataAulaBetweenAndMarcadaTrue(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
     long countByDataAulaBetweenAndMarcadaFalse(LocalDate inicio, LocalDate fim);
 
     List<Aula> findAllByDataAulaBetween(LocalDate inicio, LocalDate fim);
