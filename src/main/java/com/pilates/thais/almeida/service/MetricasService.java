@@ -197,33 +197,17 @@ public class MetricasService {
 
     private List<DesempenhoMensalResponseDto> obterDesempenhoMensal() {
         LocalDate hoje = hoje();
-        LocalDate desde = hoje.minusMonths(5).withDayOfMonth(1);
-
-        Map<String, long[]> porMes = new LinkedHashMap<>();
-        for (int i = 5; i >= 0; i--) {
-            porMes.put(YearMonth.from(hoje.minusMonths(i)).toString(), new long[]{0L, 0L});
-        }
-
-        for (Object[] linha : aulaRepository.agruparPorMesEStatus(desde)) {
-            String mes = (String) linha[0];
-            boolean marcada = Boolean.TRUE.equals(linha[1]);
-            long total = (Long) linha[2];
-
-            long[] contadores = porMes.get(mes);
-            if (contadores == null || !marcada) {
-                continue;
-            }
-            contadores[0] += total;
-        }
-
-        for (Map.Entry<String, long[]> entrada : porMes.entrySet()) {
-            YearMonth mes = YearMonth.parse(entrada.getKey());
-            entrada.getValue()[1] = aulaAlunoRepository.countFaltasNoPeriodo(mes.atDay(1), mes.atEndOfMonth());
-        }
 
         List<DesempenhoMensalResponseDto> resultado = new ArrayList<>();
-        for (Map.Entry<String, long[]> entrada : porMes.entrySet()) {
-            resultado.add(new DesempenhoMensalResponseDto(entrada.getKey(), entrada.getValue()[0], entrada.getValue()[1]));
+        for (int i = 5; i >= 0; i--) {
+            YearMonth mes = YearMonth.from(hoje.minusMonths(i));
+            LocalDate inicio = mes.atDay(1);
+            LocalDate fim = mes.atEndOfMonth();
+
+            long realizadas = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REALIZADA", inicio, fim);
+            long canceladas = aulaAlunoRepository.countFaltasNoPeriodo(inicio, fim);
+
+            resultado.add(new DesempenhoMensalResponseDto(mes.toString(), realizadas, canceladas));
         }
         return resultado;
     }
@@ -236,7 +220,7 @@ public class MetricasService {
             LocalDate inicio = inicioSemanaAtual.minusWeeks(i);
             LocalDate fim = inicio.plusDays(6);
 
-            long realizadas = aulaRepository.countByDataAulaBetweenAndMarcadaTrue(inicio, fim);
+            long realizadas = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REALIZADA", inicio, fim);
             long canceladas = aulaAlunoRepository.countFaltasNoPeriodo(inicio, fim);
 
             resultado.add(new DesempenhoMensalResponseDto(inicio.toString(), realizadas, canceladas));

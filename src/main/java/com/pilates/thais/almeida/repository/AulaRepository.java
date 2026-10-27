@@ -30,8 +30,4 @@ public interface AulaRepository extends JpaRepository<Aula, Integer> {
     long countByDataAulaBetweenAndMarcadaFalse(LocalDate inicio, LocalDate fim);
 
     List<Aula> findAllByDataAulaBetween(LocalDate inicio, LocalDate fim);
-
-    @Query("SELECT FUNCTION('DATE_FORMAT', a.dataAula, '%Y-%m'), a.marcada, COUNT(a) " +
-           "FROM Aula a WHERE a.dataAula >= :desde GROUP BY FUNCTION('DATE_FORMAT', a.dataAula, '%Y-%m'), a.marcada")
-    List<Object[]> agruparPorMesEStatus(@Param("desde") LocalDate desde);
 }
