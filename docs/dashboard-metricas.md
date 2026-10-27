@@ -12,9 +12,9 @@ Toda a lógica está centralizada em `MetricasService` (`src/main/java/com/pilat
 |---|---|---|
 | `totalAlunos` | **Total de alunos** | `AlunoRepository.countByAtivoTrue()` — conta todos os alunos com `ativo = true`, **independente de terem ou não um plano ativo**. A legenda do card é "ativos no sistema" exatamente por isso. |
 | `taxaOcupacao` | **Taxa de ocupação** | Para cada turma ativa (`Turma.ativa = true`), calcula `matriculados / capacidadeMax`; o resultado é a **média simples** dessas razões entre todas as turmas ativas (turmas sem `capacidadeMax` ou com capacidade 0 são ignoradas). "Matriculados" vem de `AlunoTurmaRepository.countMatriculadosPorTurma()`, que conta vínculos `AlunoTurma.ativo = true`. |
-| `aulasSemana` | **Aulas esta semana** | `aulasProgramadasSemana + aulasCanceladasSemana` da semana atual (segunda a domingo, por `dataAula`). |
-| `aulasProgramadasSemana` | legenda "de X programadas" | `AulaRepository.countByDataAulaBetweenAndMarcadaTrue` na semana atual — conta **sessões de aula** (`Aula`, não alunos) com `marcada = true`. |
-| `aulasCanceladasSemana` | (usado só para somar `aulasSemana`) | `AulaRepository.countByDataAulaBetweenAndMarcadaFalse` na semana atual — sessões inteiras com `marcada = false`. **Atenção:** não existe, hoje, nenhum botão na UI que desative uma aula inteira (`PUT /aulas/{id}/desativar`); esse número é sempre 0 na prática. |
+| `turmasRealizadasSemana` | **Turmas realizadas** | Turmas **distintas** com pelo menos uma aula cujo horário de término (`turma.horaInicio + turma.duracaoMinutos`, 50min se nulo) já passou, dentro da semana atual (segunda a domingo). Calculado em Java (`contarTurmasComAulaJaEncerradaNoPeriodo`), não em SQL, porque depende da hora atual, não só da data. |
+| `turmasAgendadasSemana` | legenda "X agendadas esta semana" | `AulaRepository.countDistinctTurmaByDataAulaBetweenAndMarcadaTrue` na semana atual — turmas distintas com qualquer aula marcada na semana, já tenha acontecido ou não. |
+| `aulasSemana` / `aulasProgramadasSemana` / `aulasCanceladasSemana` | *(não exibidos mais na tela)* | Continuam calculados e expostos no DTO (compatibilidade), mas o card do topo não os usa mais desde a troca para `turmasRealizadasSemana`/`turmasAgendadasSemana` — o antigo "Aulas esta semana" mostrava `X de X programadas`, redundante na prática (`aulasCanceladasSemana` quase sempre 0, ver nota abaixo). |
 | `taxaRetencao` | **Taxa de retenção** | `1 - taxaSaidaMes` (ver abaixo). Se não havia nenhum aluno com plano ativo no início do mês, `taxaSaidaMes` é `0.0` e a retenção fica em `100%` (não em `0%`) — ver nota de design abaixo. |
 | `taxaSaidaMes` | legenda "X% saída este mês" | `desmatriculadosMes / ativosInicioMes`, onde `ativosInicioMes = AlunoPlanoRepository.countAtivosNaData(inicioMes)` (quantos `AlunoPlano` estavam ativos no dia 1º do mês) e `desmatriculadosMes = AlunoPlanoRepository.countByAtivoFalseAndDataFimBetween(inicioMes, fimMes)` (planos que viraram inativos com `dataFim` dentro do mês). Se `ativosInicioMes == 0`, o resultado é `0.0` (sem base para medir saída). |
 | `variacaoOcupacaoMes` | *(não exibido)* | Hardcoded `0.0` — não existe snapshot histórico de ocupação por mês no schema atual. |
@@ -52,7 +52,7 @@ Série de `{ periodo, aulasRealizadas, aulasCanceladas }`, as duas sempre no ní
 
 Antes da correção, `aulasRealizadas` contava **sessões de turma** (`Aula.marcada = true`) enquanto `aulasCanceladas` contava **faltas de alunos individuais**. Numa turma de 5 alunos onde 2 faltam, isso virava "+1 realizada, +2 canceladas" — os dois números descreviam populações diferentes (uma sessão vs. presenças individuais) e não eram comparáveis entre si no mesmo gráfico, o que tornava a leitura enganosa. A correção trocou `aulasRealizadas` para contar `AulaAluno.status = 'REALIZADA'` (setado automaticamente pelo `PresencaScheduler` para aulas passadas que continuavam `AGENDADO`), deixando as duas séries na mesma granularidade: presenças confirmadas vs. faltas, por aluno.
 
-Isso é diferente do que o card "Métricas de aulas" faz com `aulasRealizadas`/`aulasProgramadas` (ver abaixo) — lá a pergunta é "quantas das minhas turmas aconteceram de fato?" (nível de sessão), uma pergunta legítima e distinta da que o gráfico responde.
+O card "Métricas de aulas" (ver abaixo) também é em nível de aluno hoje, então as três métricas (gráfico, card e KPI "Turmas realizadas" do topo) usam granularidades consistentes entre si, cada uma respondendo a uma pergunta diferente: gráfico e card = agendamentos de aluno; KPI do topo = turmas (grupos) distintas.
 
 O texto de alerta abaixo do gráfico ("Atenção: X teve o maior pico de cancelamentos...") é calculado **no frontend**, a partir desses mesmos dados.
 
@@ -87,15 +87,17 @@ Aceita um mês explícito (padrão: mês atual). Compara sempre com o mês anter
 
 | Campo | Cálculo |
 |---|---|
-| `aulasRealizadas` | `AulaRepository.countByDataAulaBetweenAndMarcadaTrue` no mês — nível de **sessão**. |
-| `aulasProgramadas` | `aulasRealizadas + AulaRepository.countByDataAulaBetweenAndMarcadaFalse` no mês — também nível de sessão; é o denominador de "X de Y programadas". |
+| `aulasRealizadas` | `AulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REALIZADA", inicio, fim)` no mês — nível de **aluno**: agendamentos de aluno com presença confirmada. |
+| `aulasProgramadas` | `AulaAlunoRepository.countByAula_DataAulaBetween` no mês — total de agendamentos de aluno no período, qualquer status; é o denominador de "X de Y programadas". |
 | `aulasCanceladas` | `AulaAlunoRepository.countFaltasNoPeriodo` no mês — nível de **aluno** (mesma base do banner de alertas). |
 | `aulasRemarcadas` | `AulaAlunoRepository.countFaltasRemarcadasNoPeriodo` no mês — nível de aluno. |
 | `taxaRemarcacao` | `aulasRemarcadas / aulasCanceladas` (0 se não houve nenhuma falta no mês). **Não** usa `aulasProgramadas` como denominador — antes da correção usava, o que diluía a taxa (dividia remarcações de alunos pelo total de sessões do mês, uma base ~5x maior e sem relação direta) e fazia a meta "acima de 60%" praticamente impossível de bater. |
 
-### Por que `aulasRealizadas`/`aulasProgramadas` continuam em nível de sessão, mas `aulasCanceladas`/`aulasRemarcadas` são em nível de aluno
+### Nota de design: todo o card "Métricas de aulas" é em nível de aluno
 
-São duas perguntas diferentes que esse card responde ao mesmo tempo: "quantas das minhas turmas aconteceram de fato?" (sessão) e "dos alunos que faltaram, quantos eu já reagendei?" (aluno). Misturar as duas no mesmo denominador é que causava o problema original.
+Antes, `aulasRealizadas`/`aulasProgramadas` contavam sessões de turma (`Aula.marcada`), enquanto `aulasCanceladas`/`aulasRemarcadas` já contavam faltas de aluno — dois níveis diferentes no mesmo card, e `aulasRealizadas` incluía até aulas **futuras** do mês (bastava `marcada = true`, sem checar se a aula já tinha acontecido). A correção trocou `aulasRealizadas`/`aulasProgramadas` para `AulaAluno`, igual ao resto do card: agora as quatro métricas descrevem agendamentos de aluno, numa mesma base.
+
+Isso é diferente do KPI "Turmas realizadas" do topo da dashboard (ver acima), que conta **turmas distintas** por semana usando o horário de término real da aula (`turma.horaInicio + duracaoMinutos`) — ali a pergunta é sobre turmas (grupos), não sobre agendamentos individuais de aluno.
 
 ---
 
@@ -118,7 +120,7 @@ Ambas usam a mesma relação que `countAguardandoReagendamento()` já usava (`Au
 ## Funcionalidades incompletas que afetam estas métricas
 
 1. **Marcar falta** (`AulaAluno.status = 'AUSENTE'`) — implementado em `feature/marcar-falta-aluno` (endpoint `PUT /aulas/alunos/{id}/ausente` + botão em `TurmaEspecifica`). Antes dessa branch, nada no sistema definia esse status, então `alunosParaReagendamento`, `aulasCanceladasMes` e `aulasRemarcadas` ficavam sempre em 0.
-2. **Desativar aula inteira** (`Aula.marcada = false`, endpoint `PUT /aulas/{id}/desativar`) — existe no backend desde sempre, mas **não tem nenhum botão no frontend**. Isso significa que `aulasCanceladasSemana` (KPI "aulas esta semana") e `aulasProgramadas` do card "Métricas de aulas" tendem a ficar sempre artificialmente baixos/zerados na prática, mesmo sem ser um bug de cálculo — é simplesmente um recurso que o studio não tem como acionar pela tela ainda. Isso **não afeta mais** a série "Canceladas" do gráfico de desempenho nem `aulasCanceladas` do card de métricas, que hoje usam `AulaAluno` (faltas por aluno), independente desse campo.
+2. **Desativar aula inteira** (`Aula.marcada = false`, endpoint `PUT /aulas/{id}/desativar`) — existe no backend desde sempre, mas **não tem nenhum botão no frontend**, então `aulasCanceladasSemana` tende a ficar sempre em 0 na prática. Isso **não afeta** `turmasRealizadasSemana`/`turmasAgendadasSemana` (KPI do topo), nem `aulasCanceladas`/`aulasRealizadas`/`aulasProgramadas` do card "Métricas de aulas" nem a série "Canceladas"/"Realizadas" do gráfico — todos esses hoje usam `AulaAluno`, independente desse campo.
 
 ## Status `REALIZADA`: presença confirmada por padrão
 
@@ -129,4 +131,4 @@ Agora existe um quinto status, `REALIZADA` ("presença confirmada"), e um job (`
 Pontos importantes:
 - A correção continua possível depois do fato: o botão "Marcar falta" em `TurmaEspecifica` aceita tanto `AGENDADO` quanto `REALIZADA` como estado de partida, então dá pra reverter um "presença assumida" pra "ausente" mesmo depois do job já ter rodado.
 - `REALIZADA` conta como ocupante normal em `countOcupantesAtivosDaAula` (mesma regra de antes: tudo que não é `CANCELADA` ocupa vaga) e não interfere nas queries de falta/reagendamento (que olham especificamente para `AUSENTE`).
-- Isso é um status por **aluno**, independente do `Aula.marcada` (sessão inteira) usado por `aulasRealizadas`/`aulasProgramadas` do card "Métricas de aulas" — os dois não são a mesma coisa (ver nota do item 2 acima). Já o gráfico de desempenho usa esse status `REALIZADA` diretamente (ver seção do gráfico, acima).
+- Isso é um status por **aluno**. `aulasRealizadas` do card "Métricas de aulas" e as séries do gráfico de desempenho usam esse status `REALIZADA` diretamente. Já o KPI "Turmas realizadas" do topo é por **turma** (grupo), calculado via horário de término da aula, não via esse status — os dois medem coisas diferentes mesmo tendo nomes parecidos.

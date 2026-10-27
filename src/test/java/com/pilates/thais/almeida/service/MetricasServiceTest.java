@@ -77,10 +77,11 @@ class MetricasServiceTest {
     void obterMetricasAulasCalculaTaxaDeRemarcacaoSobreAsFaltas() {
         // Given
         YearMonth mes = YearMonth.of(2026, 10);
-        Mockito.when(aulaRepository.countByDataAulaBetweenAndMarcadaTrue(ArgumentMatchers.any(), ArgumentMatchers.any()))
-                .thenReturn(20L); // aulas (sessoes) realizadas
-        Mockito.when(aulaRepository.countByDataAulaBetweenAndMarcadaFalse(ArgumentMatchers.any(), ArgumentMatchers.any()))
-                .thenReturn(5L); // sessoes inteiras desativadas
+        Mockito.when(aulaAlunoRepository.countByStatusAndAula_DataAulaBetween(
+                        ArgumentMatchers.eq("REALIZADA"), ArgumentMatchers.any(), ArgumentMatchers.any()))
+                .thenReturn(20L); // agendamentos de aluno com presenca confirmada
+        Mockito.when(aulaAlunoRepository.countByAula_DataAulaBetween(ArgumentMatchers.any(), ArgumentMatchers.any()))
+                .thenReturn(25L); // total de agendamentos de aluno no mes, qualquer status
         Mockito.when(aulaAlunoRepository.countFaltasNoPeriodo(ArgumentMatchers.any(), ArgumentMatchers.any()))
                 .thenReturn(10L); // faltas de alunos
         Mockito.when(aulaAlunoRepository.countFaltasRemarcadasNoPeriodo(ArgumentMatchers.any(), ArgumentMatchers.any()))
@@ -91,10 +92,13 @@ class MetricasServiceTest {
 
         // Then
         Assertions.assertEquals(20L, resultado.getAulasRealizadas());
-        Assertions.assertEquals(25L, resultado.getAulasProgramadas()); // 20 realizadas + 5 desativadas (sessao)
+        Assertions.assertEquals(25L, resultado.getAulasProgramadas());
         Assertions.assertEquals(10L, resultado.getAulasCanceladas()); // faltas de alunos, nao sessoes
         Assertions.assertEquals(6L, resultado.getAulasRemarcadas());
         Assertions.assertEquals(0.6, resultado.getTaxaRemarcacao(), 0.0001); // 6/10, nao 6/25
+
+        Mockito.verify(aulaRepository, Mockito.never())
+                .countByDataAulaBetweenAndMarcadaTrue(ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 
     @Test

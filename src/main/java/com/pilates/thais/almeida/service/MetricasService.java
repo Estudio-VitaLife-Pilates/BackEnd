@@ -85,22 +85,24 @@ public class MetricasService {
     }
 
     private long contarTurmasComAulaJaEncerradaNoPeriodo(LocalDate inicio, LocalDate fim) {
-        LocalDateTime agora = LocalDateTime.now();
-
-        Set<Integer> turmasComAulaEncerrada = aulaRepository.findAllByDataAulaBetween(inicio, fim).stream()
-                .filter(Aula::getMarcada)
-                .filter(aula -> aula.getTurma() != null)
-                .filter(aula -> {
-                    Turma turma = aula.getTurma();
-                    LocalTime horaInicio = turma.getHoraInicio();
-                    int duracao = turma.getDuracaoMinutos() != null ? turma.getDuracaoMinutos() : 50;
-                    LocalDateTime fimDaAula = LocalDateTime.of(aula.getDataAula(), horaInicio).plusMinutes(duracao);
-                    return !fimDaAula.isAfter(agora);
-                })
+        return aulaRepository.findAllByDataAulaBetween(inicio, fim).stream()
+                .filter(this::aulaMarcadaEJaEncerrada)
                 .map(aula -> aula.getTurma().getId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet())
+                .size();
+    }
 
-        return turmasComAulaEncerrada.size();
+    private boolean aulaMarcadaEJaEncerrada(Aula aula) {
+        if (!Boolean.TRUE.equals(aula.getMarcada()) || aula.getTurma() == null) {
+            return false;
+        }
+
+        Turma turma = aula.getTurma();
+        LocalTime horaInicio = turma.getHoraInicio();
+        int duracao = turma.getDuracaoMinutos() != null ? turma.getDuracaoMinutos() : 50;
+        LocalDateTime fimDaAula = LocalDateTime.of(aula.getDataAula(), horaInicio).plusMinutes(duracao);
+
+        return !fimDaAula.isAfter(LocalDateTime.now());
     }
 
     public DashboardAlertaResponseDto obterAlertas() {
@@ -183,10 +185,11 @@ public class MetricasService {
         LocalDate inicioMes = mes.atDay(1);
         LocalDate fimMes = mes.atEndOfMonth();
 
-        // "Realizadas de X programadas" é sobre as turmas (sessões) em si: quantas aconteceram
-        // de todas as que estavam no calendário nesse mês.
-        long aulasRealizadas = aulaRepository.countByDataAulaBetweenAndMarcadaTrue(inicioMes, fimMes);
-        long aulasProgramadas = aulasRealizadas + aulaRepository.countByDataAulaBetweenAndMarcadaFalse(inicioMes, fimMes);
+        // "Realizadas de X programadas" é por aluno, igual canceladas/remarcadas abaixo: conta
+        // AulaAluno com status REALIZADA, de todos os agendamentos de aluno no mês. Antes contava
+        // sessoes de turma (Aula.marcada), uma granularidade diferente da usada no resto do card.
+        long aulasRealizadas = aulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REALIZADA", inicioMes, fimMes);
+        long aulasProgramadas = aulaAlunoRepository.countByAula_DataAulaBetween(inicioMes, fimMes);
 
         // "Canceladas"/"Remarcadas" são sobre faltas de alunos individuais, não sobre a sessão
         // inteira — por isso usam a mesma base da falta (status AUSENTE / reposição vinculada).
