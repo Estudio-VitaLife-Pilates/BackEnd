@@ -46,6 +46,8 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
 
     long countByStatusAndAula_DataAulaBetween(String status, LocalDate inicio, LocalDate fim);
 
+    long countByAula_DataAulaBetween(LocalDate inicio, LocalDate fim);
+
     Optional<AulaAluno> findByAula_IdAndAluno_Id(Integer id, Integer alunoId);
 
     @Modifying
