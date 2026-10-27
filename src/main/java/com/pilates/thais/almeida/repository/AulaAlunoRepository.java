@@ -24,7 +24,7 @@ public interface AulaAlunoRepository extends JpaRepository<AulaAluno, Integer> {
 
     Page<AulaAluno> findByAluno_Id(Integer alunoId, Pageable pageable);
 
-    @Query("SELECT COUNT(aa) FROM AulaAluno aa WHERE aa.status = 'AUSENTE' " +
+    @Query("SELECT COUNT(DISTINCT aa.aluno.id) FROM AulaAluno aa WHERE aa.status = 'AUSENTE' " +
             "AND NOT EXISTS (SELECT 1 FROM AulaAluno r WHERE r.aulaOrigem = aa.aula AND r.aluno = aa.aluno AND r.status = 'REPOSICAO')")
     long countAguardandoReagendamento();
 
