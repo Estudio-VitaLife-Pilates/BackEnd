@@ -1,6 +1,7 @@
 package com.pilates.thais.almeida.service;
 
 import com.pilates.thais.almeida.dto.dashboard.DashboardAlertaResponseDto;
+import com.pilates.thais.almeida.dto.dashboard.DesempenhoMensalResponseDto;
 import com.pilates.thais.almeida.dto.dashboard.MetricasAulaResponseDto;
 import com.pilates.thais.almeida.repository.AlunoPlanoRepository;
 import com.pilates.thais.almeida.repository.AlunoRepository;
@@ -94,5 +95,53 @@ class MetricasServiceTest {
         Assertions.assertEquals(10L, resultado.getAulasCanceladas()); // faltas de alunos, nao sessoes
         Assertions.assertEquals(6L, resultado.getAulasRemarcadas());
         Assertions.assertEquals(0.6, resultado.getTaxaRemarcacao(), 0.0001); // 6/10, nao 6/25
+    }
+
+    @Test
+    @DisplayName("Deve basear 'realizadas' do grafico de desempenho em AulaAluno (mesma granularidade de 'canceladas'), nao em sessoes de Aula")
+    void obterDesempenhoMensalUsaAulaAlunoParaRealizadasNaMesmaGranularidadeDeCanceladas() {
+        // Given
+        Mockito.when(aulaAlunoRepository.countByStatusAndAula_DataAulaBetween(
+                        ArgumentMatchers.eq("REALIZADA"), ArgumentMatchers.any(LocalDate.class), ArgumentMatchers.any(LocalDate.class)))
+                .thenReturn(8L);
+        Mockito.when(aulaAlunoRepository.countFaltasNoPeriodo(ArgumentMatchers.any(LocalDate.class), ArgumentMatchers.any(LocalDate.class)))
+                .thenReturn(3L);
+
+        // When
+        java.util.List<DesempenhoMensalResponseDto> resultado = service.obterDesempenho("mensal");
+
+        // Then
+        Assertions.assertEquals(6, resultado.size());
+        for (DesempenhoMensalResponseDto item : resultado) {
+            Assertions.assertEquals(8L, item.getAulasRealizadas());
+            Assertions.assertEquals(3L, item.getAulasCanceladas());
+        }
+
+        Mockito.verify(aulaRepository, Mockito.never())
+                .countByDataAulaBetweenAndMarcadaTrue(ArgumentMatchers.any(), ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("Deve basear 'realizadas' do grafico semanal em AulaAluno tambem")
+    void obterDesempenhoSemanalUsaAulaAlunoParaRealizadas() {
+        // Given
+        Mockito.when(aulaAlunoRepository.countByStatusAndAula_DataAulaBetween(
+                        ArgumentMatchers.eq("REALIZADA"), ArgumentMatchers.any(LocalDate.class), ArgumentMatchers.any(LocalDate.class)))
+                .thenReturn(2L);
+        Mockito.when(aulaAlunoRepository.countFaltasNoPeriodo(ArgumentMatchers.any(LocalDate.class), ArgumentMatchers.any(LocalDate.class)))
+                .thenReturn(1L);
+
+        // When
+        java.util.List<DesempenhoMensalResponseDto> resultado = service.obterDesempenho("semanal");
+
+        // Then
+        Assertions.assertEquals(8, resultado.size());
+        for (DesempenhoMensalResponseDto item : resultado) {
+            Assertions.assertEquals(2L, item.getAulasRealizadas());
+            Assertions.assertEquals(1L, item.getAulasCanceladas());
+        }
+
+        Mockito.verify(aulaRepository, Mockito.never())
+                .countByDataAulaBetweenAndMarcadaTrue(ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 }

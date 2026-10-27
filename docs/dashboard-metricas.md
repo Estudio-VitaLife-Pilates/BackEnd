@@ -43,12 +43,16 @@ Antes da correção, `aulasCanceladasMes` contava **sessões inteiras** (`Aula.m
 
 ## `GET /dashboard/desempenho?periodo=mensal|semanal` — gráfico de barras
 
-Série de `{ periodo, aulasRealizadas, aulasCanceladas }`, sempre no nível de **sessão** (`Aula`, não aluno):
+Série de `{ periodo, aulasRealizadas, aulasCanceladas }`, as duas sempre no nível de **aluno** (`AulaAluno`), para serem diretamente comparáveis na mesma barra:
 
-- **Mensal** (padrão): últimos 6 meses (incluindo o atual). Para cada mês, soma `Aula.agruparPorMesEStatus` agrupado por `marcada` — `aulasRealizadas` = soma onde `marcada = true`, `aulasCanceladas` = soma onde `marcada = false`.
-- **Semanal**: últimas 8 semanas (segunda a domingo). Para cada semana, `AulaRepository.countByDataAulaBetweenAndMarcadaTrue`/`...MarcadaFalse`.
+- **Mensal** (padrão): últimos 6 meses (incluindo o atual). Para cada mês, `aulasRealizadas` = `AulaAlunoRepository.countByStatusAndAula_DataAulaBetween("REALIZADA", inicioMes, fimMes)` e `aulasCanceladas` = `countFaltasNoPeriodo` (mesma query do banner de alertas e do card "Métricas de aulas").
+- **Semanal**: últimas 8 semanas (segunda a domingo). Mesmas duas queries, por semana.
 
-Como não existe UI para desativar uma aula inteira, a série de "canceladas" deste gráfico também tende a ficar sempre em 0 na prática — é a mesma lacuna de funcionalidade descrita acima, só que aqui é intencionalmente nível de sessão (não de aluno), então **não deve** ser alterada para usar `AulaAluno` como as métricas acima.
+### Nota de design: por que as duas pontas do gráfico usam `AulaAluno`, não `Aula`
+
+Antes da correção, `aulasRealizadas` contava **sessões de turma** (`Aula.marcada = true`) enquanto `aulasCanceladas` contava **faltas de alunos individuais**. Numa turma de 5 alunos onde 2 faltam, isso virava "+1 realizada, +2 canceladas" — os dois números descreviam populações diferentes (uma sessão vs. presenças individuais) e não eram comparáveis entre si no mesmo gráfico, o que tornava a leitura enganosa. A correção trocou `aulasRealizadas` para contar `AulaAluno.status = 'REALIZADA'` (setado automaticamente pelo `PresencaScheduler` para aulas passadas que continuavam `AGENDADO`), deixando as duas séries na mesma granularidade: presenças confirmadas vs. faltas, por aluno.
+
+Isso é diferente do que o card "Métricas de aulas" faz com `aulasRealizadas`/`aulasProgramadas` (ver abaixo) — lá a pergunta é "quantas das minhas turmas aconteceram de fato?" (nível de sessão), uma pergunta legítima e distinta da que o gráfico responde.
 
 O texto de alerta abaixo do gráfico ("Atenção: X teve o maior pico de cancelamentos...") é calculado **no frontend**, a partir desses mesmos dados.
 
@@ -114,7 +118,7 @@ Ambas usam a mesma relação que `countAguardandoReagendamento()` já usava (`Au
 ## Funcionalidades incompletas que afetam estas métricas
 
 1. **Marcar falta** (`AulaAluno.status = 'AUSENTE'`) — implementado em `feature/marcar-falta-aluno` (endpoint `PUT /aulas/alunos/{id}/ausente` + botão em `TurmaEspecifica`). Antes dessa branch, nada no sistema definia esse status, então `alunosParaReagendamento`, `aulasCanceladasMes` e `aulasRemarcadas` ficavam sempre em 0.
-2. **Desativar aula inteira** (`Aula.marcada = false`, endpoint `PUT /aulas/{id}/desativar`) — existe no backend desde sempre, mas **não tem nenhum botão no frontend**. Isso significa que `aulasCanceladasSemana` (KPI "aulas esta semana"), a série "Canceladas" do gráfico de desempenho, e `aulasProgramadas` do card "Métricas de aulas" também tendem a ficar sempre artificialmente baixos/zerados na prática, mesmo sem ser um bug de cálculo — é simplesmente um recurso que o studio não tem como acionar pela tela ainda.
+2. **Desativar aula inteira** (`Aula.marcada = false`, endpoint `PUT /aulas/{id}/desativar`) — existe no backend desde sempre, mas **não tem nenhum botão no frontend**. Isso significa que `aulasCanceladasSemana` (KPI "aulas esta semana") e `aulasProgramadas` do card "Métricas de aulas" tendem a ficar sempre artificialmente baixos/zerados na prática, mesmo sem ser um bug de cálculo — é simplesmente um recurso que o studio não tem como acionar pela tela ainda. Isso **não afeta mais** a série "Canceladas" do gráfico de desempenho nem `aulasCanceladas` do card de métricas, que hoje usam `AulaAluno` (faltas por aluno), independente desse campo.
 
 ## Status `REALIZADA`: presença confirmada por padrão
 
@@ -125,4 +129,4 @@ Agora existe um quinto status, `REALIZADA` ("presença confirmada"), e um job (`
 Pontos importantes:
 - A correção continua possível depois do fato: o botão "Marcar falta" em `TurmaEspecifica` aceita tanto `AGENDADO` quanto `REALIZADA` como estado de partida, então dá pra reverter um "presença assumida" pra "ausente" mesmo depois do job já ter rodado.
 - `REALIZADA` conta como ocupante normal em `countOcupantesAtivosDaAula` (mesma regra de antes: tudo que não é `CANCELADA` ocupa vaga) e não interfere nas queries de falta/reagendamento (que olham especificamente para `AUSENTE`).
-- Isso é um status por **aluno**, independente do `Aula.marcada` (sessão inteira) usado pelo KPI "aulas realizadas" — os dois não são a mesma coisa, ver nota do item 2 acima.
+- Isso é um status por **aluno**, independente do `Aula.marcada` (sessão inteira) usado por `aulasRealizadas`/`aulasProgramadas` do card "Métricas de aulas" — os dois não são a mesma coisa (ver nota do item 2 acima). Já o gráfico de desempenho usa esse status `REALIZADA` diretamente (ver seção do gráfico, acima).
