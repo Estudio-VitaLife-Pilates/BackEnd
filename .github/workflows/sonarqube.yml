@@ -1,0 +1,49 @@
+name: SonarCloud Security Gate
+
+on:
+  pull_request:
+    branches: ["develop"]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sonarqube:
+    name: "[quality] - SonarCloud scan + security gate"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build and test
+        run: ./mvnw --batch-mode verify
+
+      - name: SonarCloud scan (waits for Quality Gate)
+        run: >
+          ./mvnw --batch-mode org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=vitalife-backend
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.qualitygate.wait=true
+
+      - name: OWASP PR summary
+        if: always()
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: vitalife-backend
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/owasp_pr_summary.py
