@@ -34,7 +34,3 @@ build/
 .vscode/
 .claude/
 claude.exe
-
-### Python ###
-__pycache__/
-*.pyc
