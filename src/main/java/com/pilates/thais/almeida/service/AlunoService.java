@@ -1,7 +1,9 @@
 package com.pilates.thais.almeida.service;
 
+import com.pilates.thais.almeida.dto.endereco.EnderecoDto;
 import com.pilates.thais.almeida.entity.*;
 import com.pilates.thais.almeida.exceptions.*;
+import com.pilates.thais.almeida.mapper.AlunoMapper;
 import com.pilates.thais.almeida.repository.*;
 import org.springframework.stereotype.Service;
 import com.pilates.thais.almeida.strategy.CalculoVigenciaPlanoStrategy;
@@ -22,18 +24,21 @@ public class AlunoService {
     private final CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy;
     private final AlunoTurmaRepository alunoTurmaRepository;
     private final AulaAlunoRepository aulaAlunoRepository;
+    private final EnderecoRepository enderecoRepository;
 
     public AlunoService(AlunoRepository alunoRepository, PlanoRepository planoRepository,
                         AlunoPlanoRepository alunoPlanoRepository,
                         CalculoVigenciaPlanoStrategy calculoVigenciaPlanoStrategy,
                         AlunoTurmaRepository alunoTurmaRepository,
-                        AulaAlunoRepository aulaAlunoRepository) {
+                        AulaAlunoRepository aulaAlunoRepository,
+                        EnderecoRepository enderecoRepository) {
         this.alunoRepository = alunoRepository;
         this.planoRepository = planoRepository;
         this.alunoPlanoRepository = alunoPlanoRepository;
         this.calculoVigenciaPlanoStrategy = calculoVigenciaPlanoStrategy;
         this.alunoTurmaRepository = alunoTurmaRepository;
         this.aulaAlunoRepository = aulaAlunoRepository;
+        this.enderecoRepository = enderecoRepository;
     }
 
     public List<Aluno> obterTodos(){
@@ -53,6 +58,7 @@ public class AlunoService {
         if(alunoRepository.existsAlunoByEmail(aluno.getEmail())){
             throw new CadastroAlunoConflitoEmail("Aluno com este email já existe");
         }
+        vincularEndereco(aluno, aluno.getEndereco());
         return alunoRepository.save(aluno);
     }
 
@@ -113,14 +119,51 @@ public class AlunoService {
     }
 
     public Aluno editar(Aluno aluno, Integer id){
-        Optional<Aluno> alunoBD = alunoRepository.findById(id);
+        Aluno alunoBD = alunoRepository.findById(id)
+                .orElseThrow(() -> new AlunoNaoEncontrado(""));
 
-        if(alunoBD.isPresent()){
-            aluno.setId(alunoBD.get().getId());
+        aluno.setId(alunoBD.getId());
+        aluno.setDataCadastro(alunoBD.getDataCadastro());
+        aluno.setAtivo(alunoBD.getAtivo());
+        aluno.setAlunoPlanos(alunoBD.getAlunoPlanos());
+        atualizarEndereco(alunoBD, aluno.getEndereco());
+        aluno.setEndereco(alunoBD.getEndereco());
 
-            return alunoRepository.save(aluno);
+        return alunoRepository.save(aluno);
+    }
+
+    private void vincularEndereco(Aluno aluno, Endereco endereco) {
+        if (endereco == null) {
+            aluno.setEndereco(null);
+            return;
         }
-        throw new AlunoNaoEncontrado("");
+        endereco.setAluno(aluno);
+        aluno.setEndereco(endereco);
+    }
+
+    private void atualizarEndereco(Aluno alunoBD, Endereco novoEndereco) {
+        if (novoEndereco == null) {
+            if (alunoBD.getEndereco() != null) {
+                enderecoRepository.delete(alunoBD.getEndereco());
+                alunoBD.setEndereco(null);
+            }
+            return;
+        }
+
+        Endereco enderecoAtual = alunoBD.getEndereco();
+        if (enderecoAtual == null) {
+            novoEndereco.setAluno(alunoBD);
+            alunoBD.setEndereco(novoEndereco);
+            return;
+        }
+
+        enderecoAtual.setCep(novoEndereco.getCep());
+        enderecoAtual.setLogradouro(novoEndereco.getLogradouro());
+        enderecoAtual.setBairro(novoEndereco.getBairro());
+        enderecoAtual.setCidade(novoEndereco.getCidade());
+        enderecoAtual.setEstado(novoEndereco.getEstado());
+        enderecoAtual.setNumero(novoEndereco.getNumero());
+        enderecoAtual.setComplemento(novoEndereco.getComplemento());
     }
 
     public void deletarPorId(Integer id){

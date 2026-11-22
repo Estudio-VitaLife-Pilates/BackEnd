@@ -1,5 +1,6 @@
 package com.pilates.thais.almeida.dto.aluno;
 
+import com.pilates.thais.almeida.dto.endereco.EnderecoDto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +26,8 @@ public class AlunoRequestDto {
     private LocalDate dataNascimento;
 
     private String fichaAnamnese;
+
+    private EnderecoDto endereco;
 
     public String getNome() {
         return nome;
@@ -72,5 +75,13 @@ public class AlunoRequestDto {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public EnderecoDto getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(EnderecoDto endereco) {
+        this.endereco = endereco;
     }
 }

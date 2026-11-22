@@ -1,13 +1,12 @@
 package com.pilates.thais.almeida.dto.aluno;
 
-
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.pilates.thais.almeida.dto.endereco.EnderecoDto;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @JsonPropertyOrder({
-        "id","nome","telefone","cpf","email","fichaAnamnese","ativo","dataNascimento","dataCadastro"
+        "id","nome","telefone","cpf","email","fichaAnamnese","ativo","dataNascimento","dataCadastro","endereco","vencimentoPlanoAtivo"
 })
 public class AlunoResponseDto {
     private Integer id;
@@ -19,6 +18,7 @@ public class AlunoResponseDto {
     private LocalDate dataNascimento;
     private LocalDate dataCadastro;
     private String fichaAnamnese;
+    private EnderecoDto endereco;
     private LocalDate vencimentoPlanoAtivo;
 
     public Integer getId() {
@@ -91,6 +91,14 @@ public class AlunoResponseDto {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public EnderecoDto getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(EnderecoDto endereco) {
+        this.endereco = endereco;
     }
 
     public LocalDate getVencimentoPlanoAtivo() {

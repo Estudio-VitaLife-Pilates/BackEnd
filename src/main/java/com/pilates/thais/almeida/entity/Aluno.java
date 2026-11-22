@@ -23,6 +23,9 @@ public class Aluno extends Auditavel {
     private LocalDate dataCadastro;
     private String fichaAnamnese;
 
+    @OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Endereco endereco;
+
     @OneToMany(mappedBy = "aluno")
     private List<AlunoPlano> alunoPlanos = new ArrayList<>();
 
@@ -96,6 +99,17 @@ public class Aluno extends Auditavel {
 
     public void setFichaAnamnese(String fichaAnamnese) {
         this.fichaAnamnese = fichaAnamnese;
+    }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
+        if (endereco != null) {
+            endereco.setAluno(this);
+        }
     }
 
     public List<AlunoPlano> getAlunoPlanos() {
