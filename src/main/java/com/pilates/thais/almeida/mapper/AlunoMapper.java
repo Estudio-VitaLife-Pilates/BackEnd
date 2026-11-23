@@ -2,6 +2,7 @@ package com.pilates.thais.almeida.mapper;
 
 import com.pilates.thais.almeida.dto.aluno.AlunoDetailsResponseDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoRequestDto;
+import com.pilates.thais.almeida.dto.aluno.AlunoResponseBaseDto;
 import com.pilates.thais.almeida.dto.aluno.AlunoResponseDto;
 import com.pilates.thais.almeida.dto.endereco.EnderecoDto;
 import com.pilates.thais.almeida.entity.Aluno;
@@ -14,17 +15,7 @@ public class AlunoMapper {
 
     public static AlunoResponseDto toResponse(Aluno entity){
         AlunoResponseDto dto = new AlunoResponseDto();
-
-        dto.setNome(entity.getNome());
-        dto.setCpf(entity.getCpf());
-        dto.setEmail(entity.getEmail());
-        dto.setAtivo(entity.getAtivo());
-        dto.setDataCadastro(entity.getDataCadastro());
-        dto.setId(entity.getId());
-        dto.setDataNascimento(entity.getDataNascimento());
-        dto.setTelefone(entity.getTelefone());
-        dto.setFichaAnamnese(entity.getFichaAnamnese());
-        dto.setEndereco(toEnderecoDto(entity.getEndereco()));
+        preencherResponseBase(dto, entity);
         dto.setVencimentoPlanoAtivo(
                 entity.getAlunoPlanos().stream()
                         .filter(ap -> Boolean.TRUE.equals(ap.getAtivo()))
@@ -32,13 +23,17 @@ public class AlunoMapper {
                         .findFirst()
                         .orElse(null)
         );
-
         return dto;
     }
 
     public static AlunoDetailsResponseDto toResponseDetails(Aluno entity){
         AlunoDetailsResponseDto dto = new AlunoDetailsResponseDto();
+        preencherResponseBase(dto, entity);
+        dto.setPlanos(entity.getAlunoPlanos().stream().map(AlunoMapper::toPlanoResponse).toList());
+        return dto;
+    }
 
+    private static void preencherResponseBase(AlunoResponseBaseDto dto, Aluno entity) {
         dto.setNome(entity.getNome());
         dto.setCpf(entity.getCpf());
         dto.setEmail(entity.getEmail());
@@ -49,26 +44,14 @@ public class AlunoMapper {
         dto.setTelefone(entity.getTelefone());
         dto.setFichaAnamnese(entity.getFichaAnamnese());
         dto.setEndereco(toEnderecoDto(entity.getEndereco()));
-
-        dto.setPlanos(
-                entity.getAlunoPlanos()
-                        .stream()
-                        .map(AlunoMapper::toPlanoResponse)
-                        .toList()
-        );
-
-        return dto;
     }
 
     public static List<AlunoResponseDto> toResponse(List<Aluno> entities){
-        return entities.stream()
-                .map(AlunoMapper::toResponse)
-                .toList();
+        return entities.stream().map(AlunoMapper::toResponse).toList();
     }
 
     public static Aluno toEntity(AlunoRequestDto dto){
         Aluno aluno = new Aluno();
-
         aluno.setNome(dto.getNome());
         aluno.setAtivo(true);
         aluno.setCpf(dto.getCpf());
@@ -78,25 +61,15 @@ public class AlunoMapper {
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setFichaAnamnese(dto.getFichaAnamnese());
         aluno.setEndereco(toEnderecoEntity(dto.getEndereco()));
-
         return aluno;
     }
 
     public static Endereco toEnderecoEntity(EnderecoDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        if (isEnderecoVazio(dto)) {
+        if (dto == null || isEnderecoVazio(dto)) {
             return null;
         }
         Endereco endereco = new Endereco();
-        endereco.setCep(dto.getCep());
-        endereco.setLogradouro(dto.getLogradouro());
-        endereco.setBairro(dto.getBairro());
-        endereco.setCidade(dto.getCidade());
-        endereco.setEstado(dto.getEstado());
-        endereco.setNumero(dto.getNumero());
-        endereco.setComplemento(dto.getComplemento());
+        copiarEndereco(dto, endereco);
         return endereco;
     }
 
@@ -105,48 +78,42 @@ public class AlunoMapper {
             return null;
         }
         EnderecoDto dto = new EnderecoDto();
-        dto.setCep(entity.getCep());
-        dto.setLogradouro(entity.getLogradouro());
-        dto.setBairro(entity.getBairro());
-        dto.setCidade(entity.getCidade());
-        dto.setEstado(entity.getEstado());
-        dto.setNumero(entity.getNumero());
-        dto.setComplemento(entity.getComplemento());
+        copiarEndereco(entity, dto);
         return dto;
     }
 
-    public static boolean isEnderecoVazio(EnderecoDto dto) {
-        return (dto.getCep() == null || dto.getCep().isBlank()) &&
-                (dto.getLogradouro() == null || dto.getLogradouro().isBlank()) &&
-                (dto.getBairro() == null || dto.getBairro().isBlank()) &&
-                (dto.getCidade() == null || dto.getCidade().isBlank()) &&
-                (dto.getEstado() == null || dto.getEstado().isBlank()) &&
-                (dto.getNumero() == null || dto.getNumero().isBlank()) &&
-                (dto.getComplemento() == null || dto.getComplemento().isBlank());
+    private static void copiarEndereco(com.pilates.thais.almeida.entity.EnderecoDados origem, com.pilates.thais.almeida.entity.EnderecoDados destino) {
+        destino.setCep(origem.getCep());
+        destino.setLogradouro(origem.getLogradouro());
+        destino.setBairro(origem.getBairro());
+        destino.setCidade(origem.getCidade());
+        destino.setEstado(origem.getEstado());
+        destino.setNumero(origem.getNumero());
+        destino.setComplemento(origem.getComplemento());
     }
 
+    public static boolean isEnderecoVazio(EnderecoDto dto) {
+        return isBlank(dto.getCep()) && isBlank(dto.getLogradouro()) && isBlank(dto.getBairro()) &&
+                isBlank(dto.getCidade()) && isBlank(dto.getEstado()) && isBlank(dto.getNumero()) && isBlank(dto.getComplemento());
+    }
+
+    private static boolean isBlank(String v) { return v == null || v.isBlank(); }
+
     private static AlunoDetailsResponseDto.AlunoPlanoResponseDto toPlanoResponse(AlunoPlano entity){
-
-        AlunoDetailsResponseDto.AlunoPlanoResponseDto dto =
-                new AlunoDetailsResponseDto.AlunoPlanoResponseDto();
-
+        AlunoDetailsResponseDto.AlunoPlanoResponseDto dto = new AlunoDetailsResponseDto.AlunoPlanoResponseDto();
         dto.setIdPlano(entity.getPlano().getId());
         dto.setIdAlunoPlano(entity.getId());
         dto.setNome(entity.getPlano().getNome());
         dto.setFrequenciaSemanal(entity.getPlano().getFrequenciaSemanal());
         dto.setValidadeDias(entity.getPlano().getValidadeDias());
         dto.setValorMensal(entity.getPlano().getValorMensal());
-
         dto.setDataInicio(entity.getDataInicio());
         dto.setDataFim(entity.getDataFim());
         dto.setAtivo(entity.getAtivo());
-
         return dto;
     }
 
     public static List<AlunoDetailsResponseDto> toResponseDetails(List<Aluno> entities){
-        return entities.stream()
-                .map(AlunoMapper::toResponseDetails)
-                .toList();
+        return entities.stream().map(AlunoMapper::toResponseDetails).toList();
     }
 }
